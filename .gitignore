@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+/drizzle
+sqlite.db
+
 # production
 /build
 
