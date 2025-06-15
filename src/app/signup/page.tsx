@@ -26,7 +26,7 @@ export default function Home() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [error, setError] = useState("");
 
-  const addUser = trpc.addUser.useMutation({
+  const addUser = trpc.user.addUser.useMutation({
     onSuccess: () => {
       router.push("/home");
     },

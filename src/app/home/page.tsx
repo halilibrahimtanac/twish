@@ -1,10 +1,9 @@
 "use client"
-
 import React from 'react'
 import { trpc } from '../_trpc/client'
 
 const Home = () => {
-  const getUsers = trpc.getUsers.useQuery();
+  const getUsers = trpc.user.getUsers.useQuery();
 
   if(getUsers.isLoading){
     return <div>loading...</div>

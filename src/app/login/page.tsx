@@ -23,7 +23,7 @@ export default function LoginPage() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [error, setError] = useState("");
 
-  const login = trpc.loginRoute.useMutation({
+  const login = trpc.user.login.useMutation({
     onSuccess: (res) => {
         console.log("RES: ", res);
         router.push("/home");
