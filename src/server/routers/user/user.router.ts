@@ -1,4 +1,3 @@
-// src/server/api/routers/user/user.router.ts
 import { publicProcedure, router } from '@/server/trpc';
 import { addUserInput, loginInput } from './user.input';
 import * as userService from './user.service';
@@ -19,4 +18,6 @@ export const userRouter = router({
     .mutation(async ({ input }) => {
       return userService.loginUser(input);
   }),
+  
+  logout: publicProcedure.mutation(userService.logoutUser)
 });

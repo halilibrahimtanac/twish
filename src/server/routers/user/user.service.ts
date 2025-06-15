@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { hashPassword, comparePassword } from '@/lib/password';
 import { createAndSetSession } from '@/lib/auth';
 import type { AddUserInput, LoginInput } from './user.input';
+import { cookies } from 'next/headers';
 
 export async function getAllUsers() {
   return db.select({ id: users.id, name: users.name }).from(users);
@@ -58,3 +59,15 @@ export async function loginUser(input: LoginInput) {
     },
   };
 }
+
+export async function logoutUser() {
+    (await cookies()).set('session-token-twish', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: -1,
+      path: '/',
+    });
+  
+    return { success: true };
+  }

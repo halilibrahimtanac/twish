@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,36 +13,37 @@ import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { trpc } from "../_trpc/client";
+import { useUserStore } from "@/lib/store/user.store";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { setUser } = useUserStore()
   const [formData, setFormData] = useState({
     email: "",
-    password: ""
+    password: "",
   });
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [error, setError] = useState("");
 
   const login = trpc.user.login.useMutation({
     onSuccess: (res) => {
-        console.log("RES: ", res);
-        router.push("/home");
-      },
-      onError: (error) => {
-        console.log(error);
-        setError("");
-      },
+      setUser(res.user);
+      router.push("/home");
+    },
+    onError: (error) => {
+      console.log(error);
+      setError("");
+    },
   });
 
   const handleSubmit = async () => {
     setError("");
     try {
-        console.log(formData)
-        await login.mutateAsync(formData);
+      await login.mutateAsync(formData);
     } catch (error) {
-        console.log(error);
+      console.log(error);
     }
-  }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -84,13 +85,16 @@ export default function LoginPage() {
                   Forgot your password?
                 </Link>
               </div>
-              <Input id="password" type="password" required name="password" onChange={handleChange}/>
+              <Input
+                id="password"
+                type="password"
+                required
+                name="password"
+                onChange={handleChange}
+              />
             </div>
             <Button type="submit" className="w-full" onClick={handleSubmit}>
               Login
-            </Button>
-            <Button variant="outline" className="w-full">
-              Login with Google
             </Button>
           </div>
           <div className="mt-4 text-center text-sm">

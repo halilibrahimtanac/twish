@@ -28,7 +28,7 @@ export default function Home() {
 
   const addUser = trpc.user.addUser.useMutation({
     onSuccess: () => {
-      router.push("/home");
+      router.push("/login");
     },
     onError: (error) => {
       setError(JSON.parse(error.message));
