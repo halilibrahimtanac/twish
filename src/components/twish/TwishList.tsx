@@ -16,7 +16,6 @@ export default function TwishList() {
     return (
       <TooltipProvider> 
         <main className="min-h-screen bg-background flex flex-col items-center p-4">
-          <h1 className="text-3xl font-bold my-8">Recent Posts</h1>
           <div className="flex flex-col gap-4">
             {twishes.data && twishes.data.length > 0 ? (
               twishes.data.map(twish => {

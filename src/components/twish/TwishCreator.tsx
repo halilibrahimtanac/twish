@@ -18,10 +18,11 @@ import { trpc } from "@/app/_trpc/client";
 export function TwishCreator() {
   const { user } = useUserStore();
   const [content, setContent] = useState("");
+  const utils = trpc.useUtils();
   const { mutateAsync: twishMutate, isPending } =
     trpc.twish.newTwish.useMutation({
-      onSuccess: (res) => {
-        console.log("RES: ", res);
+      onSuccess: () => {
+        utils.twish.getAllTwishes.invalidate();
         toast("Success", {
           description: "Your post has been published.",
           closeButton: true

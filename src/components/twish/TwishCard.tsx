@@ -29,8 +29,13 @@ import {
     MoreHorizontal,
     CalendarDays,
   } from "lucide-react";
+import { TooltipIconButton } from "../ui/tooltip-icon-button";
+import { trpc } from "@/app/_trpc/client";
+import { toast } from "sonner";
+import { useUserStore } from "@/lib/store/user.store";
   
   export interface TwishData {
+    id: string;
     authorName: string;
     authorUsername: string;
     authorAvatarUrl?: string;
@@ -47,9 +52,25 @@ import {
   }
   
   export function TwishCard({ twish }: TwishCardProps) {
+    const { user } = useUserStore();
+    const utils = trpc.useUtils();
+    const likeTwish = trpc.twish.likeTwish.useMutation({
+      onSuccess: () => {
+        utils.twish.getAllTwishes.invalidate();
+      },
+      onError: (error) => {
+        console.error("Failed to post:", error);
+        toast("Error", {
+          description: "Something went wrong. Please try again.",
+          closeButton: true
+        });
+      },
+    });
+
+
     return (
-      <Card className="min-w-2xl mx-auto">
-        <CardHeader className="flex flex-row items-start gap-4 space-y-0">
+      <Card className="min-w-2xl mx-auto py-2 rounded-sm gap-3">
+        <CardHeader className="flex flex-row items-center gap-2 space-y-0 px-3">
           <HoverCard>
             <HoverCardTrigger asChild>
               <a href={`/${twish.authorUsername}`} className="flex-shrink-0">
@@ -118,7 +139,7 @@ import {
           </div>
         </CardHeader>
   
-        <CardContent>
+        <CardContent className="px-4">
           <p className="text-base whitespace-pre-wrap leading-relaxed">
             {twish.content}
           </p>
@@ -126,51 +147,36 @@ import {
   
         <Separator />
   
-        <CardFooter className="py-2">
-          <TooltipProvider>
-            <div className="flex items-center justify-start gap-1 w-full text-muted-foreground">
-              {/* Like Button */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="group">
-                    <Heart className="h-5 w-5 group-hover:text-red-500 group-hover:fill-red-500 transition-colors" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Like</p>
-                </TooltipContent>
-              </Tooltip>
-              <span className="text-sm font-medium pr-4">{twish.likes}</span>
-  
-              {/* Comment Button */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="group">
-                    <MessageCircle className="h-5 w-5 group-hover:text-blue-500 transition-colors" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Comment</p>
-                </TooltipContent>
-              </Tooltip>
-              <span className="text-sm font-medium pr-4">{twish.comments}</span>
-              
-              {/* Share Button */}
-              <div className="ml-auto">
-                  <Tooltip>
-                  <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="group">
-                      <Share2 className="h-5 w-5 group-hover:text-green-500 transition-colors" />
-                      </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                      <p>Share</p>
-                  </TooltipContent>
-                  </Tooltip>
-              </div>
-            </div>
-          </TooltipProvider>
-        </CardFooter>
+        <CardFooter className="py-0 px-2">
+        <TooltipProvider>
+          <div className="flex w-full items-center justify-start gap-1 text-muted-foreground">
+            {/* Like Button */}
+            <TooltipIconButton
+              IconComponent={Heart}
+              tooltipText="Like"
+              hoverClassName="group-hover:text-red-500 group-hover:fill-red-500"
+              onClick={() => likeTwish.mutate({ twishId: twish.id, username: user?.username || ""})}
+            />
+            <span className="min-w-[2.5rem] pr-4 text-sm font-medium">{twish.likes}</span>
+
+            {/* Comment Button */}
+            <TooltipIconButton
+              IconComponent={MessageCircle}
+              tooltipText="Comment"
+              hoverClassName="group-hover:text-blue-500"
+            />
+            <span className="min-w-[2.5rem] pr-4 text-sm font-medium">{twish.comments}</span>
+
+            {/* Share Button (Pushed to the right) */}
+            <TooltipIconButton
+              IconComponent={Share2}
+              tooltipText="Share"
+              hoverClassName="group-hover:text-green-500"
+              className="ml-auto" // Use the className prop for layout
+            />
+          </div>
+        </TooltipProvider>
+      </CardFooter>
       </Card>
     );
   }

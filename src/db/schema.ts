@@ -1,5 +1,5 @@
 // Add `foreignKey` to your imports
-import { sqliteTable, text, integer, foreignKey } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, foreignKey, primaryKey } from "drizzle-orm/sqlite-core";
 import { relations, sql } from "drizzle-orm";
 
 export const users = sqliteTable("users", {
@@ -8,6 +8,7 @@ export const users = sqliteTable("users", {
   username: text("username").notNull().unique(),
   name: text("name").notNull(),
   password: text("password").notNull(),
+  bio: text("bio"),
   profilePictureId: text("profile_picture_id"),
   backgroundPictureId: text("background_picture_id"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(current_timestamp)`),
@@ -45,9 +46,20 @@ export const media = sqliteTable("media", {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(current_timestamp)`),
 });
 
+export const likes = sqliteTable("likes", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  twishId: text("twish_id").notNull().references(() => twishes.id, { onDelete: 'cascade' }),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(current_timestamp)`),
+}, (self) => ([
+  // A user can only like a post once, so we create a composite primary key.
+  primaryKey({ columns: [self.userId, self.twishId] }),
+])
+);
+
 export const usersRelations = relations(users, ({ many }) => ({
   twishes: many(twishes),
-  pictures: many(pictures)
+  pictures: many(pictures),
+  likes: many(likes)
 }));
 
 export const twishesRelations = relations(twishes, ({ one, many }) => ({
@@ -66,6 +78,7 @@ export const twishesRelations = relations(twishes, ({ one, many }) => ({
     relationName: "retwishes",
   }),
   media: many(media),
+  likes: many(likes)
 }));
 
 export const mediaRelations = relations(media, ({ one }) => ({
@@ -82,6 +95,18 @@ export const picturesRelations = relations(pictures, ({ one }) => ({
   }) 
 }))
 
+export const likesRelations = relations(likes, ({ one }) => ({
+  user: one(users, {
+    fields: [likes.userId],
+    references: [users.id],
+  }),
+  twish: one(twishes, {
+    fields: [likes.twishId],
+    references: [twishes.id],
+  }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type Twish = typeof twishes.$inferSelect;
 export type Media = typeof media.$inferSelect;
+export type Like = typeof likes.$inferSelect;
