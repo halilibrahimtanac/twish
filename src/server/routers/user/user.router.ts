@@ -3,9 +3,7 @@ import { addUserInput, loginInput } from './user.input';
 import * as userService from './user.service';
 
 export const userRouter = router({
-  getUsers: publicProcedure.query(() => {
-    return userService.getAllUsers();
-  }),
+  getUsers: publicProcedure.query(userService.getAllUsers),
 
   addUser: publicProcedure
     .input(addUserInput)

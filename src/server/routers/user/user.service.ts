@@ -1,4 +1,3 @@
-// src/server/api/routers/user/user.service.ts
 import db from '@/db';
 import { users, type User } from '@/db/schema';
 import { eq } from 'drizzle-orm';
