@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { useUserStore } from "@/lib/store/user.store";
 import { trpc } from "@/app/_trpc/client";
 
-export function PostCreator() {
+export function TwishCreator() {
   const { user } = useUserStore();
   const [content, setContent] = useState("");
   const { mutateAsync: twishMutate, isPending } =
