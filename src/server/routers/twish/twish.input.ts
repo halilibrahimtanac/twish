@@ -10,5 +10,12 @@ export const likeTwishInput = z.object({
     twishId: z.string().min(1)
 });
 
+export const reTwishInput = z.object({
+    content: z.string().min(1),
+    originalTwishId: z.string().min(1),
+    userId: z.string().min(1)
+});
+
 export type TwishInputType = z.infer<typeof newTwishInput>;
 export type LikeTwishInput = z.infer<typeof likeTwishInput>;
+export type ReTwishInput = z.infer<typeof reTwishInput>;

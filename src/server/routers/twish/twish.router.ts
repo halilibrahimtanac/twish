@@ -1,9 +1,10 @@
 import { publicProcedure, router } from "@/server/trpc";
 import * as twishService from "./twish.service";
-import { likeTwishInput, newTwishInput } from "./twish.input";
+import { likeTwishInput, newTwishInput, reTwishInput } from "./twish.input";
 
 export const twishRouter = router({
     getAllTwishes: publicProcedure.query(twishService.getFeedTwishes),
     newTwish: publicProcedure.input(newTwishInput).mutation(async ({ input }) => twishService.newTwishService(input)),
-    likeTwish: publicProcedure.input(likeTwishInput).mutation(async ({ input }) => twishService.likeTwishService(input))
+    likeTwish: publicProcedure.input(likeTwishInput).mutation(async ({ input }) => twishService.likeTwishService(input)),
+    reTwish: publicProcedure.input(reTwishInput).mutation(async ({ input}) => twishService.reTwishService(input))
 })

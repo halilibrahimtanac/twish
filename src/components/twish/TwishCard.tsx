@@ -25,9 +25,9 @@ import {
   import {
     MessageCircle,
     Heart,
-    Share2,
     MoreHorizontal,
     CalendarDays,
+    Repeat,
   } from "lucide-react";
 import { TooltipIconButton } from "../ui/tooltip-icon-button";
 import { trpc } from "@/app/_trpc/client";
@@ -47,26 +47,33 @@ import { cn } from "@/lib/utils";
     authorBio?: string;
     authorJoinedDate: string;
     likedByUserIds?: string[];
+    retwishes: number;
   }
   
   interface TwishCardProps {
     twish: TwishData;
   }
+
+  const resultFunctions = (utils: ReturnType<typeof trpc.useUtils>, errorMessage: string = "") => ({
+    onSuccess: () => {
+        utils.twish.getAllTwishes.invalidate();
+      },
+      onError: () => {
+        toast("Error", {
+          description: errorMessage || "Something went wrong. Please try again.",
+          closeButton: true
+        });
+      },
+  })
   
   export function TwishCard({ twish }: TwishCardProps) {
     const { user } = useUserStore();
     const utils = trpc.useUtils();
     const likeTwish = trpc.twish.likeTwish.useMutation({
-      onSuccess: () => {
-        utils.twish.getAllTwishes.invalidate();
-      },
-      onError: (error) => {
-        console.error("Failed to post:", error);
-        toast("Error", {
-          description: "Something went wrong. Please try again.",
-          closeButton: true
-        });
-      },
+      ...resultFunctions(utils, "Failed to like twish")
+    });
+    const reTwish = trpc.twish.reTwish.useMutation({
+      ...resultFunctions(utils, "Failed to retwish")
     });
 
     return (
@@ -146,7 +153,7 @@ import { cn } from "@/lib/utils";
           </p>
         </CardContent>
   
-        <Separator />
+        <Separator className="!h-[0.5px]"/>
   
         <CardFooter className="py-0 px-2">
         <TooltipProvider>
@@ -158,7 +165,7 @@ import { cn } from "@/lib/utils";
               hoverClassName={cn("group-hover:text-red-500 group-hover:fill-red-500", twish.likedByUserIds?.includes(user?.id || "") && "text-red-500 fill-red-500")}
               onClick={() => likeTwish.mutate({ twishId: twish.id, username: user?.username || ""})}
             />
-            <span className="min-w-[2.5rem] pr-4 text-sm font-medium">{twish.likes}</span>
+            <span className="min-w-fit pr-2 text-sm font-medium">{twish.likes}</span>
 
             {/* Comment Button */}
             <TooltipIconButton
@@ -166,15 +173,17 @@ import { cn } from "@/lib/utils";
               tooltipText="Comment"
               hoverClassName="group-hover:text-blue-500"
             />
-            <span className="min-w-[2.5rem] pr-4 text-sm font-medium">{twish.comments}</span>
+            <span className="min-w-fit pr-2 text-sm font-medium">{twish.comments}</span>
 
-            {/* Share Button (Pushed to the right) */}
+            {/* Share Button */}
             <TooltipIconButton
-              IconComponent={Share2}
+              IconComponent={Repeat}
               tooltipText="Share"
               hoverClassName="group-hover:text-green-500"
-              className="ml-auto" // Use the className prop for layout
+              onClick={() => reTwish.mutate({ content: twish.content, userId: user?.id || "", originalTwishId: twish.id })}
             />
+
+            <span className="min-w-fit pr-2 text-sm font-medium">{twish.retwishes}</span>
           </div>
         </TooltipProvider>
       </CardFooter>
