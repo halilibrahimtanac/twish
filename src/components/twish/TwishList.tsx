@@ -15,8 +15,8 @@ export default function TwishList() {
     
     return (
       <TooltipProvider> 
-        <main className="min-h-screen bg-background flex flex-col items-center p-4">
-          <div className="flex flex-col gap-4">
+        <main className="min-h-screen bg-background flex flex-col items-center">
+          <div className="flex flex-col">
             {twishes.data && twishes.data.length > 0 ? (
               twishes.data.map(twish => {
                 // const postCardData = transformPostData(post);

@@ -52,6 +52,7 @@ export async function loginUser(input: LoginInput) {
   return {
     success: true,
     user: {
+      id: user.id,
       email: user.email,
       username: user.username,
       name: user.name,

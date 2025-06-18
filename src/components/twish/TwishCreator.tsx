@@ -56,7 +56,7 @@ export function TwishCreator() {
       .join("") || "U";
 
   return (
-    <Card className="w-full max-w-2xl mx-auto gap-4 py-4">
+    <Card className="w-full max-w-2xl mx-auto gap-4 py-4 rounded-none">
       {/* <CardHeader>
      
       </CardHeader> */}

@@ -33,6 +33,7 @@ import { TooltipIconButton } from "../ui/tooltip-icon-button";
 import { trpc } from "@/app/_trpc/client";
 import { toast } from "sonner";
 import { useUserStore } from "@/lib/store/user.store";
+import { cn } from "@/lib/utils";
   
   export interface TwishData {
     id: string;
@@ -45,6 +46,7 @@ import { useUserStore } from "@/lib/store/user.store";
     comments?: number;
     authorBio?: string;
     authorJoinedDate: string;
+    likedByUserIds?: string[];
   }
   
   interface TwishCardProps {
@@ -67,9 +69,8 @@ import { useUserStore } from "@/lib/store/user.store";
       },
     });
 
-
     return (
-      <Card className="min-w-2xl mx-auto py-2 rounded-sm gap-3">
+      <Card className="min-w-2xl mx-auto py-2 rounded-none gap-3 border-t-0">
         <CardHeader className="flex flex-row items-center gap-2 space-y-0 px-3">
           <HoverCard>
             <HoverCardTrigger asChild>
@@ -154,7 +155,7 @@ import { useUserStore } from "@/lib/store/user.store";
             <TooltipIconButton
               IconComponent={Heart}
               tooltipText="Like"
-              hoverClassName="group-hover:text-red-500 group-hover:fill-red-500"
+              hoverClassName={cn("group-hover:text-red-500 group-hover:fill-red-500", twish.likedByUserIds?.includes(user?.id || "") && "text-red-500 fill-red-500")}
               onClick={() => likeTwish.mutate({ twishId: twish.id, username: user?.username || ""})}
             />
             <span className="min-w-[2.5rem] pr-4 text-sm font-medium">{twish.likes}</span>

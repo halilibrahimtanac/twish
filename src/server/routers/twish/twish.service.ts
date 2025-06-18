@@ -39,14 +39,23 @@ export async function getFeedTwishes() {
         sql<number>`coalesce((select count from like_counts where like_counts.twish_id = ${twishes.id}), 0)`.mapWith(
           Number
         ),
+      likedByUserIds: sql<string[]>`
+      group_concat(distinct ${likes.userId})
+    `.mapWith((csv) =>
+      csv
+        ? csv.split(',').filter(Boolean)
+        : []
+    ),
       // comments: sql<number>`coalesce(${comments.count}, 0)`.mapWith(Number),
     })
     .from(twishes)
     .innerJoin(users, eq(twishes.authorId, users.id))
+    .leftJoin(likes, eq(twishes.id, likes.twishId))
     // Filter to only get top-level, original posts
     // .where(eq(twishes.type, "original"))
     // Order by most recent
     .orderBy(desc(twishes.createdAt))
+    .groupBy(twishes.id, users.id)
     .limit(20); // Add pagination
 
   return posts;
