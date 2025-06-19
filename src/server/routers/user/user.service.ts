@@ -36,7 +36,8 @@ export async function loginUser(input: LoginInput) {
     .limit(1);
 
   if (foundUser.length === 0) {
-    throw new Error('Invalid credentials');
+    // Throw error as an object with the field as key
+    throw new Error(JSON.stringify({ email: "No such user found" }));
   }
 
   const user = foundUser[0];
@@ -44,7 +45,8 @@ export async function loginUser(input: LoginInput) {
   const isPasswordValid = await comparePassword(input.password, user.password);
 
   if (!isPasswordValid) {
-    throw new Error('Invalid credentials');
+    // Throw error as an object with the field as key
+    throw new Error(JSON.stringify({ password: "Password is incorrect" }));
   }
   
   await createAndSetSession(user);
