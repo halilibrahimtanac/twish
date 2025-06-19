@@ -11,8 +11,8 @@ export const users = sqliteTable("users", {
   bio: text("bio"),
   profilePictureId: text("profile_picture_id"),
   backgroundPictureId: text("background_picture_id"),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(current_timestamp)`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(current_timestamp)`),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
 });
 
 export const pictures = sqliteTable("pictures", {
@@ -20,7 +20,7 @@ export const pictures = sqliteTable("pictures", {
   type: text("type").notNull(),
   url: text("url").notNull(),
   uploadedBy: text("uploaded_by").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(current_timestamp)`),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
 });
 
 export const twishes = sqliteTable("twishes", {
@@ -29,8 +29,8 @@ export const twishes = sqliteTable("twishes", {
   authorId: text("author_id").notNull().references(() => users.id),
   originalTwishId: text("original_twish_id"), 
   type: text("type").notNull().default("original"),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(current_timestamp)`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(current_timestamp)`),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
 }, (self) => ([
   foreignKey({
     columns: [self.originalTwishId],
@@ -43,13 +43,13 @@ export const media = sqliteTable("media", {
   type: text("type").notNull(), // 'image' or 'video'
   url: text("url").notNull(),
   twishId: text("twish_id").notNull().references(() => twishes.id),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(current_timestamp)`),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
 });
 
 export const likes = sqliteTable("likes", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   twishId: text("twish_id").notNull().references(() => twishes.id, { onDelete: 'cascade' }),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(current_timestamp)`),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
 }, (self) => ([
   // A user can only like a post once, so we create a composite primary key.
   primaryKey({ columns: [self.userId, self.twishId] }),

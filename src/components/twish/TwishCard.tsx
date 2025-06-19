@@ -33,7 +33,7 @@ import { TooltipIconButton } from "../ui/tooltip-icon-button";
 import { trpc } from "@/app/_trpc/client";
 import { toast } from "sonner";
 import { useUserStore } from "@/lib/store/user.store";
-import { cn } from "@/lib/utils";
+import { cn, dateStringConverter } from "@/lib/utils";
   
   export interface TwishData {
     id: string;
@@ -75,6 +75,8 @@ import { cn } from "@/lib/utils";
     const reTwish = trpc.twish.reTwish.useMutation({
       ...resultFunctions(utils, "Failed to retwish")
     });
+
+    console.log(twish);
 
     return (
       <Card className="min-w-2xl mx-auto py-2 rounded-none gap-3 border-t-0">
@@ -129,7 +131,7 @@ import { cn } from "@/lib/utils";
                 </p>
               </div>
               <div className="flex items-center text-xs text-muted-foreground">
-                <span>{twish.createdAt}</span>
+                <span>{dateStringConverter(twish.createdAt)}</span>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

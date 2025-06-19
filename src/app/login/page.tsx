@@ -13,8 +13,7 @@ import { useRouter } from "next/navigation";
 import { trpc } from "../_trpc/client";
 import { useUserStore } from "@/lib/store/user.store";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { z } from "zod";
-import { loginInput } from "@/server/routers/user/user.input";
+import { LoginInput, loginInput } from "@/server/routers/user/user.input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormInput } from "@/components/ui/form-input";
 
@@ -28,7 +27,7 @@ export default function LoginPage() {
     handleSubmit,
     formState: { errors, isSubmitting },
     setError,
-  } = useForm<z.infer<typeof loginInput>>({
+  } = useForm<LoginInput>({
     resolver: zodResolver(loginInput), // This connects Zod to React Hook Form
     defaultValues: {
       // Good practice to set default values
@@ -44,7 +43,7 @@ export default function LoginPage() {
     },
     onError: (error) => {
       const parsedError = Object.entries(JSON.parse(error.message)) as [
-        keyof z.infer<typeof loginInput>,
+        keyof LoginInput,
         string
       ][];
       if (parsedError[0] && parsedError[0][0]) {
@@ -56,7 +55,7 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit: SubmitHandler<z.infer<typeof loginInput>> = async (
+  const onSubmit: SubmitHandler<LoginInput> = async (
     formData
   ) => {
     try {
@@ -77,7 +76,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
-            <FormInput<z.infer<typeof loginInput>>
+            <FormInput<LoginInput>
               label="Email"
               name="email"
               type="email"
@@ -86,7 +85,7 @@ export default function LoginPage() {
               errors={errors}
             />
 
-            <FormInput<z.infer<typeof loginInput>>
+            <FormInput<LoginInput>
               label="Password"
               name="password"
               type="password"

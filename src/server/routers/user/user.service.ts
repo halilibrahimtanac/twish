@@ -13,18 +13,42 @@ export async function getAllUsers() {
 export async function createUser(input: AddUserInput): Promise<User> {
   const hashedPassword = await hashPassword(input.password);
 
-  const newUser = await db
-    .insert(users)
-    .values({
-      id: crypto.randomUUID(),
-      name: input.name,
-      username: input.username,
-      email: input.email,
-      password: hashedPassword,
-    })
-    .returning();
+  try {
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        id: crypto.randomUUID(),
+        name: input.name,
+        username: input.username,
+        email: input.email,
+        password: hashedPassword,
+      })
+      .returning();
 
-  return newUser[0];
+    return newUser;
+  } catch (err) {
+    if (!err || typeof err !== 'object') {
+      throw err;
+    }
+    
+    const message = (err as Error).message;
+
+    if (message.includes('users.email')) {
+      throw new Error(JSON.stringify({ 
+        email: "An account with that email already exists."
+      }));
+    }
+
+    if (message.includes('users.username')) {
+      throw new Error(JSON.stringify({
+        username: "That username is already taken."
+      }));
+    }
+
+    throw new Error(JSON.stringify({
+      error: "Unable to create user at this time."
+    }));
+  }
 }
 
 export async function loginUser(input: LoginInput) {

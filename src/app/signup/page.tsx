@@ -1,6 +1,5 @@
 "use client";
 import { trpc } from "../_trpc/client";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -9,34 +8,54 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { SubmitHandler, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { addUserInput, AddUserInput } from "@/server/routers/user/user.input";
+import { FormInput } from "@/components/ui/form-input";
 
 export default function Home() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    username: "",
-    password: "",
-    confirmPassword: "",
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setError,
+  } = useForm<AddUserInput>({
+    resolver: zodResolver(addUserInput),
+    defaultValues: {
+      name: "",
+      email: "",
+      username: "",
+      password: "",
+      confirmPassword: "",
+    },
   });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [error, setError] = useState("");
 
   const addUser = trpc.user.addUser.useMutation({
     onSuccess: () => {
       router.push("/login");
     },
     onError: (error) => {
-      setError(JSON.parse(error.message));
+      const parsedError = Object.entries(JSON.parse(error.message)) as [
+        keyof AddUserInput,
+        string
+      ][];
+      if (parsedError[0] && parsedError[0][0]) {
+        setError(parsedError[0][0], {
+          type: "validate",
+          message: parsedError[0][1],
+        });
+      }
+      
     },
   });
 
-  const handleSubmit = async () => {
-    setError("");
+  const onSubmit: SubmitHandler<AddUserInput> = async (
+    formData: AddUserInput
+  ) => {
     try {
       await addUser.mutateAsync(formData);
     } catch (error) {
@@ -44,89 +63,99 @@ export default function Home() {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
   return (
-      <div className="w-full h-screen flex items-center justify-center py-12">
-          <Card className="w-1/3">
-            <CardHeader>
-              <CardTitle className="text-xl">Sign Up</CardTitle>
-              <CardDescription>
-                Enter your information to create an account
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="first-name">Name</Label>
-                    <Input
-                      id="first-name"
-                      name="name"
-                      placeholder="Max"
-                      required
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="username">Userame</Label>
-                    <Input
-                      id="username"
-                      name="username"
-                      placeholder="Robinson"
-                      required
-                      onChange={handleChange}
-                    />
-                  </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    name="email"
-                    placeholder="m@example.com"
-                    required
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    name="password"
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="confirm-password">Confirm Password</Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    name="confirmPassword"
-                    onChange={handleChange}
-                  />
-                </div>
-                <Button type="submit" className="w-full" onClick={handleSubmit}>
-                  Create an account
-                </Button>
-                <Button variant="outline" className="w-full">
-                  Sign up with Google
-                </Button>
-              </div>
-              <div className="mt-4 text-center text-sm">
-                Already have an account?{" "}
-                <Link href="/login" className="underline">
-                  Sign in
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-      </div>
+    <div className="w-full h-screen flex items-center justify-center py-12">
+      <Card className="w-1/3">
+        <CardHeader>
+          <CardTitle className="text-xl">Sign Up</CardTitle>
+          <CardDescription>
+            Enter your information to create an account
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
+          <FormInput<AddUserInput>
+              label="Name"
+              name="name"
+              type="text"
+              placeholder="John Doe"
+              register={register}
+              errors={errors}
+            />
+            <FormInput<AddUserInput>
+              label="Email"
+              name="email"
+              type="email"
+              placeholder="m@example.com"
+              register={register}
+              errors={errors}
+            />
+            <FormInput<AddUserInput>
+              label="Username"
+              name="username"
+              type="text"
+              placeholder="username"
+              register={register}
+              errors={errors}
+            />
+            <FormInput<AddUserInput>
+              label="Password"
+              name="password"
+              type="password"
+              placeholder="*********"
+              register={register}
+              errors={errors}
+            />
+            <FormInput<AddUserInput>
+              label="Confirm Password"
+              name="confirmPassword"
+              type="password"
+              placeholder="*********"
+              register={register}
+              errors={errors}
+            />
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={addUser.isPending || isSubmitting}
+            >
+              {addUser.isPending ? (
+                <span className="flex items-center justify-center">
+                  <svg
+                    className="animate-spin h-5 w-5 mr-2 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    ></path>
+                  </svg>
+                </span>
+              ) : (
+                "Signup"
+              )}
+            </Button>
+          </form>
+          <div className="mt-4 text-center text-sm">
+            Already have an account?{" "}
+            <Link href="/login" className="underline">
+              Sign in
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
