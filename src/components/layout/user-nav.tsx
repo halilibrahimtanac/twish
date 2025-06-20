@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUserStore } from "@/lib/store/user.store";
+import { initials } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 
@@ -34,7 +35,7 @@ export function UserNav() {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
             <AvatarImage src="/avatars/03.png" alt={`@${user?.username}`} />
-            <AvatarFallback>{user?.name.split(" ").map(u => u[0]).join("")}</AvatarFallback>
+            <AvatarFallback>{initials(user?.name)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>

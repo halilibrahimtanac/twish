@@ -15,8 +15,8 @@ export default function TwishList() {
     
     return (
       <TooltipProvider> 
-        <main className="min-h-screen bg-background flex flex-col items-center">
-          <div className="flex flex-col">
+        <main className="sm:w-auto w-full min-h-screen bg-background flex flex-col items-center">
+          <div className="w-full flex flex-col">
             {twishes.data && twishes.data.length > 0 ? (
               twishes.data.map(twish => <TwishCard key={twish.id} twish={twish} />)
             ) : (

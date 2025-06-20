@@ -8,7 +8,7 @@ import {
   CardFooter,
   // CardHeader,
 } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, initials } from "@/lib/utils";
 import { toast } from "sonner";
 import { useUserStore } from "@/lib/store/user.store";
 import { trpc } from "@/app/_trpc/client";
@@ -25,14 +25,14 @@ export function TwishCreator() {
         utils.twish.getAllTwishes.invalidate();
         toast("Success", {
           description: "Your post has been published.",
-          closeButton: true
+          closeButton: true,
         });
       },
       onError: (error) => {
         console.error("Failed to post:", error);
         toast("Error", {
           description: "Something went wrong. Please try again.",
-          closeButton: true
+          closeButton: true,
         });
       },
     });
@@ -49,17 +49,13 @@ export function TwishCreator() {
     setContent("");
   };
 
-  const userInitial =
-    user?.name
-      .split(" ")
-      .map((u) => u[0])
-      .join("") || "U";
+  const userInitial = initials(user?.name);
 
   return (
     <Card className="w-full max-w-2xl mx-auto gap-4 py-2 rounded-none">
-      <CardContent>
+      <CardContent className="px-2">
         <div className="grid gap-2">
-          <div className="flex items-start space-x-2">
+          <div className="max-w-2xl flex items-start space-x-2 whitespace-pre-wrap">
             <Avatar className="h-12 w-12">
               <AvatarImage src={user?.avatarUrl} alt={user?.name} />
               <AvatarFallback>{userInitial}</AvatarFallback>
@@ -70,12 +66,13 @@ export function TwishCreator() {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="What's happening?"
-                className="w-full resize-none border-none shadow-none focus-visible:ring-0"
+                className="w-full relative resize-none border-none box-border pl-0 pr-4 shadow-none focus-visible:ring-0 whitespace-pre-wrap break-word"
               />
             </div>
           </div>
         </div>
       </CardContent>
+
       <CardFooter className="flex justify-between items-center border-t px-4 [.border-t]:pt-2">
         {/* Optional: Add icons for image upload, etc. here */}
         <div className="flex items-center space-x-2">

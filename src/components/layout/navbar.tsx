@@ -2,62 +2,23 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Menu, MountainIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { NavigationMenuLink } from "@/components/ui/navigation-menu";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 // import { ThemeToggle } from "./theme-toggle";
 import { UserNav } from "./user-nav";
+import Image from "next/image";
 
 export function Navbar() {
   return (
     <header className="px-4 sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
-        {/* Mobile Menu */}
-        <div className="md:hidden">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left">
-              <nav className="grid gap-6 text-lg font-medium">
-                <Link
-                  href="/home"
-                  className="flex items-center gap-2 text-lg font-semibold"
-                >
-                  <MountainIcon className="h-6 w-6" />
-                  <span className="sr-only">Twish</span>
-                </Link>
-                <Link href="#" className="hover:text-foreground">
-                  About
-                </Link>
-                <Link
-                  href="#"
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  Pricing
-                </Link>
-                <Link
-                  href="#"
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  Components
-                </Link>
-              </nav>
-            </SheetContent>
-          </Sheet>
-        </div>
 
         {/* Desktop Menu */}
-        <div className="mr-4 hidden md:flex">
+        <div className="mr-4 flex">
           <Link href="/home" className="mr-6 flex items-center space-x-2">
-            <MountainIcon className="h-6 w-6" />
-            <span className="hidden font-bold sm:inline-block">Twish</span>
+            <Image alt="twish-logo" src={"/twish-logo.png"} width={79} height={50}/>
           </Link>
         </div>
 
