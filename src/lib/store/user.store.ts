@@ -6,6 +6,7 @@ export interface User {
   username: string;
   name: string;
   email: string;
+  avatarUrl?: string;
 }
 
 type UserState = {

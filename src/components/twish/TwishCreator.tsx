@@ -1,9 +1,7 @@
 "use client";
-
 import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -14,6 +12,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useUserStore } from "@/lib/store/user.store";
 import { trpc } from "@/app/_trpc/client";
+import { AvatarImage } from "@radix-ui/react-avatar";
+import { Textarea } from "../ui/textarea";
 
 export function TwishCreator() {
   const { user } = useUserStore();
@@ -56,29 +56,27 @@ export function TwishCreator() {
       .join("") || "U";
 
   return (
-    <Card className="w-full max-w-2xl mx-auto gap-4 py-4 rounded-none">
-      {/* <CardHeader>
-     
-      </CardHeader> */}
+    <Card className="w-full max-w-2xl mx-auto gap-4 py-2 rounded-none">
       <CardContent>
-        <div className="grid w-full gap-2">
+        <div className="grid gap-2">
           <div className="flex items-start space-x-2">
             <Avatar className="h-12 w-12">
-              {/* <AvatarImage src={user.avatarUrl} alt={user.name} /> */}
+              <AvatarImage src={user?.avatarUrl} alt={user?.name} />
               <AvatarFallback>{userInitial}</AvatarFallback>
             </Avatar>
-            <div className="w-full">
+            <div className="flex-1 min-w-0">
               <Textarea
+                rows={2}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="What's happening?"
-                className="w-full min-h-[100px] resize-none border-0 shadow-none focus-visible:ring-0"
+                className="w-full resize-none border-none shadow-none focus-visible:ring-0"
               />
             </div>
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between items-center border-t p-4">
+      <CardFooter className="flex justify-between items-center border-t px-4 [.border-t]:pt-2">
         {/* Optional: Add icons for image upload, etc. here */}
         <div className="flex items-center space-x-2">
           {/* You can add action icons here in the future */}

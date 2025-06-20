@@ -18,12 +18,9 @@ export default function TwishList() {
         <main className="min-h-screen bg-background flex flex-col items-center">
           <div className="flex flex-col">
             {twishes.data && twishes.data.length > 0 ? (
-              twishes.data.map(twish => {
-                // const postCardData = transformPostData(post);
-                return <TwishCard key={twish.id} twish={twish} />;
-              })
+              twishes.data.map(twish => <TwishCard key={twish.id} twish={twish} />)
             ) : (
-              <p className="text-muted-foreground">No posts yet. Be the first!</p>
+              <p className="text-muted-foreground mt-4">No posts yet. Be the first!</p>
             )}
           </div>
         </main>
