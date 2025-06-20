@@ -54,15 +54,13 @@ export async function getFeedTwishes() {
   const originalTwish = alias(twishes, "original_twish");
   const originalAuthor = alias(users, "original_author");
 
-  const posts = await db
+  const feedTwishes = await db
     .with(likeCounts, retwishCounts) // Include all CTEs
     .select({
-      // Twish data
       id: twishes.id,
       content: twishes.content,
       createdAt: twishes.createdAt,
       type: twishes.type,
-      // User data
       authorId: users.id,
       authorName: users.name,
       authorUsername: users.username,
@@ -72,8 +70,6 @@ export async function getFeedTwishes() {
       likedByUserIds: sql<string[]>`(select liked_by_user_ids from like_counts lkc where lkc.twish_id = ${twishes.id})`.mapWith((csv) => csv ? csv.split(',').filter(Boolean) : []),
       retwishes: sql<number>`coalesce((select count from retwish_counts rtc where rtc.original_twish_id = ${twishes.id}), 0)`.mapWith(Number),
       retwishedByUserIds: sql<string[]>`(select retwished_by_user_ids from retwish_counts rtc where rtc.original_twish_id = ${twishes.id})`.mapWith((csv) => csv ? csv.split(',').filter(Boolean) : []),
-
-      // Original twish info (if this is a retwish)
       originalTwish: {
         id: originalTwish.id,
         content: originalTwish.content,
@@ -83,17 +79,20 @@ export async function getFeedTwishes() {
         authorUsername: originalAuthor.username,
         authorAvatarId: originalAuthor.profilePictureId,
       },
+      originalLikes: sql<number>`coalesce((select count from like_counts lkc where lkc.twish_id = ${twishes.originalTwishId}), 0)`.mapWith(Number),
+      originalLikedByUserIds: sql<string[]>`(select liked_by_user_ids from like_counts lkc where lkc.twish_id = ${twishes.originalTwishId})`.mapWith((csv) => csv ? csv.split(',').filter(Boolean) : []),
+      originalRetwishes: sql<number>`coalesce((select count from retwish_counts rtc where rtc.original_twish_id = ${twishes.originalTwishId}), 0)`.mapWith(Number),
+      originalRetwishedByUserIds: sql<string[]>`(select retwished_by_user_ids from retwish_counts rtc where rtc.original_twish_id = ${twishes.originalTwishId})`.mapWith((csv) => csv ? csv.split(',').filter(Boolean) : []),
+
     })
     .from(twishes)
     .innerJoin(users, eq(twishes.authorId, users.id))
-    // Join for original twish and its author (for retwishes)
     .leftJoin(originalTwish, eq(twishes.originalTwishId, originalTwish.id))
     .leftJoin(originalAuthor, eq(originalTwish.authorId, originalAuthor.id))
-    // Filter the main feed to only show original twishes and retwishes (not comments)
     .orderBy(desc(twishes.createdAt))
     .limit(20);
 
-  return posts;
+  return feedTwishes;
 }
 
 export const newTwishService = async (input: TwishInputType) => {
