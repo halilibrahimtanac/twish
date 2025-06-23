@@ -1,12 +1,14 @@
-import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { devtools, persist } from "zustand/middleware";
 
 export interface User {
   id: string;
+  email: string;
   username: string;
   name: string;
-  email: string;
-  avatarUrl?: string;
+  bio: string | null;
+  profilePictureUrl: string | null;
+  backgroundPictureUrl: string | null;
 }
 
 type UserState = {
@@ -24,10 +26,9 @@ export const useUserStore = create<UserState>()(
         clearUser: () => set({ user: null }),
       }),
       {
-        name: 'user-storage-twish',
+        name: "user-storage-twish",
       }
     ),
-    { name: 'UserStore' }
+    { name: "UserStore" }
   )
 );
-

@@ -23,4 +23,4 @@ export const dateStringConverter = (dateString: string): string => {
   return str.replaceAll("/", ".").replace(",", "");
 };
 
-export const initials = (str: string |undefined): string => str ? str.split(" ").map((n) => n[0].toUpperCase()).join("") : "";
+export const initials = (str: string | undefined): string => str ? str.trim().split(" ").map((n) => n[0].toUpperCase()).join("") : "";

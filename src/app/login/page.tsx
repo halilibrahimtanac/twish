@@ -42,14 +42,25 @@ export default function LoginPage() {
       router.push("/home");
     },
     onError: (error) => {
-      const parsedError = Object.entries(JSON.parse(error.message)) as [
-        keyof LoginInput,
-        string
-      ][];
-      if (parsedError[0] && parsedError[0][0]) {
+      let parsedError: [keyof LoginInput, string][] | null = null;
+      try {
+        const obj = JSON.parse(error.message);
+        if (obj && typeof obj === "object" && !Array.isArray(obj)) {
+          parsedError = Object.entries(obj) as [keyof LoginInput, string][];
+        }
+      } catch {
+
+      }
+      if (parsedError && parsedError[0] && parsedError[0][0]) {
         setError(parsedError[0][0], {
           type: "validate",
           message: parsedError[0][1],
+        });
+      } else {
+        // fallback: set a generic error on email (or a form-level error if you have one)
+        setError("email", {
+          type: "validate",
+          message: error.message || "An unknown error occurred.",
         });
       }
     },

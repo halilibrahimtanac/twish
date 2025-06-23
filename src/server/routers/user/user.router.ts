@@ -1,5 +1,5 @@
 import { publicProcedure, router } from '@/server/trpc';
-import { addUserInput, loginInput } from './user.input';
+import { addUserInput, loginInput, getUserProfileInfosInput } from './user.input';
 import * as userService from './user.service';
 
 export const userRouter = router({
@@ -17,5 +17,9 @@ export const userRouter = router({
       return userService.loginUser(input);
   }),
   
-  logout: publicProcedure.mutation(userService.logoutUser)
+  logout: publicProcedure.mutation(userService.logoutUser),
+
+  getUserProfileInfos: publicProcedure
+    .input(getUserProfileInfosInput)
+    .query(({ input }) => userService.getUserProfileInfos(input.id)),
 });

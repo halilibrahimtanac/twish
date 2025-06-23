@@ -57,7 +57,7 @@ export function TwishCreator() {
         <div className="grid gap-2">
           <div className="max-w-2xl flex items-start space-x-2 whitespace-pre-wrap">
             <Avatar className="h-12 w-12">
-              <AvatarImage src={user?.avatarUrl} alt={user?.name} />
+              <AvatarImage src={user?.profilePictureUrl ?? undefined} alt={user?.name} />
               <AvatarFallback>{userInitial}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">

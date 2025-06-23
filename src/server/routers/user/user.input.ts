@@ -11,11 +11,15 @@ export const addUserInput = z.object({
   message: "Passwords don't match",
 });
 
-export type AddUserInput = z.infer<typeof addUserInput>;
-
 export const loginInput = z.object({
   email: z.string().min(1),
   password: z.string().min(1)
 });
 
+export const getUserProfileInfosInput = z.object({
+  id: z.string().min(1)
+});
+
+export type GetUserProfileInfosInput = z.infer<typeof getUserProfileInfosInput>;
+export type AddUserInput = z.infer<typeof addUserInput>;
 export type LoginInput = z.infer<typeof loginInput>;
