@@ -20,6 +20,15 @@ export const getUserProfileInfosInput = z.object({
   id: z.string().min(1)
 });
 
+export const saveUserInfoInput = z.object({
+  id: z.string().min(1),
+  name: z.string().optional(),
+  bio: z.string().optional(),
+  profilePictureUrl: z.string().optional(),
+  backgroundPictureUrl: z.string().optional(),
+});
+
+export type SaveUserInputType = z.infer<typeof saveUserInfoInput>;
 export type GetUserProfileInfosInput = z.infer<typeof getUserProfileInfosInput>;
 export type AddUserInput = z.infer<typeof addUserInput>;
 export type LoginInput = z.infer<typeof loginInput>;

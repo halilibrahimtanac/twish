@@ -3,7 +3,7 @@ import { pictures, users, type User } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { hashPassword, comparePassword } from "@/lib/password";
 import { createAndSetSession } from "@/lib/auth";
-import type { AddUserInput, LoginInput } from "./user.input";
+import type { AddUserInput, LoginInput, SaveUserInputType } from "./user.input";
 import { cookies } from "next/headers";
 import { alias } from "drizzle-orm/sqlite-core";
 
@@ -121,7 +121,7 @@ export async function logoutUser() {
   return { success: true };
 }
 
-export async function getUserProfileInfos(id: string){
+export async function getUserProfileInfos(id: string) {
   const profilePics = alias(pictures, "profile_pics");
   const backgroundPics = alias(pictures, "background_pics");
 
@@ -138,6 +138,43 @@ export async function getUserProfileInfos(id: string){
     .leftJoin(backgroundPics, eq(users.backgroundPictureId, backgroundPics.id))
     .where(eq(users.id, id))
     .limit(1);
-  
-  return foundUser[0]
+
+  return foundUser[0];
+}
+
+export async function saveUserInfoService(input: SaveUserInputType) {
+  let newProfilePictureId: string | undefined;
+  let newBackgroundPictureId: string | undefined;
+
+  if (input.profilePictureUrl) {
+    const newProfilePictureRow = await db
+      .insert(pictures)
+      .values({
+        id: crypto.randomUUID(),
+        type: "profile_picture",
+        url: input.profilePictureUrl,
+        uploadedBy: input.id,
+      }).returning({ insertedId: pictures.id });
+
+    newProfilePictureId = newProfilePictureRow[0].insertedId;
+  }
+  if (input.backgroundPictureUrl) {
+    const newProfilePictureRow = await db
+      .insert(pictures)
+      .values({
+        id: crypto.randomUUID(),
+        type: "background_picture",
+        url: input.backgroundPictureUrl,
+        uploadedBy: input.id,
+      }).returning({ insertedId: pictures.id });
+
+    newBackgroundPictureId = newProfilePictureRow[0].insertedId;
+  }
+
+  return await db.update(users).set({
+    ...input.name ? { name: input.name } : {},
+    bio: input.bio,
+    profilePictureId: newProfilePictureId,
+    backgroundPictureId: newBackgroundPictureId
+  }).where(eq(users.id, input.id)).returning();
 }

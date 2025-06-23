@@ -1,22 +1,30 @@
 // src/components/UserProfileCard.tsx
 
+import { trpc } from "@/app/_trpc/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { User } from "@/lib/store/user.store";
+import { User, useUserStore } from "@/lib/store/user.store";
 import { cn, initials } from "@/lib/utils";
 import { Mail, MapPin, Link as LinkIcon, Edit, Camera } from "lucide-react";
 import { useState, useRef, ChangeEvent } from "react";
 
 export function UserProfileCard({
+  id,  
   name: initialName,
   username,
   bio: initialBio,
   profilePictureUrl: initialProfilePictureUrl,
   backgroundPictureUrl: initialBackgroundPictureUrl,
 }: Partial<User>) {
+  const { setUser } = useUserStore();
+  const updateUserInfo = trpc.user.updateUserInfo.useMutation({
+    onSuccess: (data) => {
+        console.log("saved: ", data);
+    }
+  });
   const [isEditing, setIsEditing] = useState(false);
 
   const [name, setName] = useState(initialName || "");
@@ -27,8 +35,9 @@ export function UserProfileCard({
   const profilePictureInputRef = useRef<HTMLInputElement>(null);
   const backgroundPictureInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     console.log("Saving data:", { name, bio, profilePictureUrl, backgroundPictureUrl });
+    await updateUserInfo.mutateAsync({ id: id ?? "", name, bio, profilePictureUrl, backgroundPictureUrl });
     setIsEditing(false);
   };
 
