@@ -1,5 +1,3 @@
-// src/components/UserProfileCard.tsx
-
 import { trpc } from "@/app/_trpc/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -29,15 +27,50 @@ export function UserProfileCard({
 
   const [name, setName] = useState(initialName || "");
   const [bio, setBio] = useState(initialBio || "");
+
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | undefined>(initialProfilePictureUrl || undefined);
   const [backgroundPictureUrl, setBackgroundPictureUrl] = useState<string | undefined>(initialBackgroundPictureUrl || undefined);
   
+  const [profilePictureFile, setProfilePictureFile] = useState<File | undefined>();
+  const [backgroundPictureFile, setBackgroundPictureFile] = useState<File | undefined>();
+
   const profilePictureInputRef = useRef<HTMLInputElement>(null);
   const backgroundPictureInputRef = useRef<HTMLInputElement>(null);
 
+  const uploadFile = async (file: File, userId: string) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(`/api/upload?userId=${userId}`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error("File upload failed");
+    }
+
+    const data = await response.json();
+    return data.url;
+  };
+
   const handleSave = async () => {
-    console.log("Saving data:", { name, bio, profilePictureUrl, backgroundPictureUrl });
-    await updateUserInfo.mutateAsync({ id: id ?? "", name, bio, profilePictureUrl, backgroundPictureUrl });
+    let newProfilePictureUrl = profilePictureUrl === initialProfilePictureUrl ? undefined : profilePictureUrl;
+    let newBackgroundPictureUrl = backgroundPictureUrl === initialBackgroundPictureUrl ? undefined : backgroundPictureUrl;
+
+    if (profilePictureFile && id) {
+        const uploadedProfileUrl = await uploadFile(profilePictureFile, id);
+        newProfilePictureUrl = `/uploads/${id}/${uploadedProfileUrl}`;
+    }
+
+    if (backgroundPictureFile && id) {
+        const uploadedBackgroundUrl = await uploadFile(backgroundPictureFile, id);
+        newBackgroundPictureUrl = `/uploads/${id}/${uploadedBackgroundUrl}`;
+    }
+    
+    await updateUserInfo.mutateAsync({ id: id ?? "", name, bio, profilePictureUrl: newProfilePictureUrl, backgroundPictureUrl: newBackgroundPictureUrl });
+    setUser("profilePictureUrl", newProfilePictureUrl || initialProfilePictureUrl);
+    setUser("backgroundPictureUrl", newBackgroundPictureUrl || initialBackgroundPictureUrl);
     setIsEditing(false);
   };
 
@@ -51,13 +84,13 @@ export function UserProfileCard({
 
   const handleFileChange = (
     e: ChangeEvent<HTMLInputElement>,
-    setter: React.Dispatch<React.SetStateAction<string | undefined>>
+    setter: React.Dispatch<React.SetStateAction<string | undefined>>,
+    fileSetter: React.Dispatch<React.SetStateAction<File | undefined>>
   ) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      // Create a temporary URL for the selected image for preview purposes
       setter(URL.createObjectURL(file));
-      // In a real app, you would also prepare this file for upload.
+      fileSetter(file);
     }
   };
 
@@ -67,14 +100,14 @@ export function UserProfileCard({
       <input
         type="file"
         ref={profilePictureInputRef}
-        onChange={(e) => handleFileChange(e, setProfilePictureUrl)}
+        onChange={(e) => handleFileChange(e, setProfilePictureUrl, setProfilePictureFile)}
         className="hidden"
         accept="image/*"
       />
       <input
         type="file"
         ref={backgroundPictureInputRef}
-        onChange={(e) => handleFileChange(e, setBackgroundPictureUrl)}
+        onChange={(e) => handleFileChange(e, setBackgroundPictureUrl, setBackgroundPictureFile)}
         className="hidden"
         accept="image/*"
       />
@@ -98,7 +131,7 @@ export function UserProfileCard({
         <div className="absolute bottom-0 left-6 translate-y-1/2">
           <div className="relative">
             <Avatar className="h-32 w-32 border-4 border-background">
-              <AvatarImage src={profilePictureUrl || undefined} alt={`${name}'s profile picture`} />
+              <AvatarImage src={profilePictureUrl ?? undefined} alt={`${name}'s profile picture`} />
               <AvatarFallback className="text-4xl">{initials(name)}</AvatarFallback>
             </Avatar>
             {/* Edit button for profile picture, shown only in edit mode */}

@@ -7,13 +7,13 @@ export interface User {
   username: string;
   name: string;
   bio: string | null;
-  profilePictureUrl: string | null;
-  backgroundPictureUrl: string | null;
+  profilePictureUrl: string | undefined;
+  backgroundPictureUrl: string | undefined;
 }
 
 type UserState = {
   user: User | null;
-  setUser: (user: User) => void;
+  setUser: <K extends keyof User>(field: K, value: User[K]) => void;
   clearUser: () => void;
 };
 
@@ -22,7 +22,10 @@ export const useUserStore = create<UserState>()(
     persist(
       (set) => ({
         user: null,
-        setUser: (user: User) => set({ user }),
+        setUser: (field, value) =>
+          set((state) => ({
+            user: state.user ? { ...state.user, [field]: value } : null,
+          })),
         clearUser: () => set({ user: null }),
       }),
       {

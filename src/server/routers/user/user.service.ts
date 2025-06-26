@@ -128,7 +128,9 @@ export async function getUserProfileInfos(id: string) {
   const foundUser = await db
     .select({
       id: users.id,
+      email: users.email,
       name: users.name,
+      bio: users.bio,
       username: users.username,
       profilePictureUrl: profilePics.url,
       backgroundPictureUrl: backgroundPics.url,
