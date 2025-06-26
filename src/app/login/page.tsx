@@ -19,7 +19,7 @@ import { FormInput } from "@/components/ui/form-input";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setUser } = useUserStore();
+  const { setUserObject } = useUserStore();
 
   // 3. Configure useForm with the zodResolver
   const {
@@ -38,7 +38,11 @@ export default function LoginPage() {
 
   const login = trpc.user.login.useMutation({
     onSuccess: (res) => {
-      setUser(res.user);
+      setUserObject({
+        ...res.user,
+        profilePictureUrl: res.user.profilePictureUrl || undefined,
+        backgroundPictureUrl: res.user.backgroundPictureUrl || undefined,
+      });
       router.push("/home");
     },
     onError: (error) => {
@@ -48,9 +52,7 @@ export default function LoginPage() {
         if (obj && typeof obj === "object" && !Array.isArray(obj)) {
           parsedError = Object.entries(obj) as [keyof LoginInput, string][];
         }
-      } catch {
-
-      }
+      } catch {}
       if (parsedError && parsedError[0] && parsedError[0][0]) {
         setError(parsedError[0][0], {
           type: "validate",

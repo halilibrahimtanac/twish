@@ -2,8 +2,8 @@ import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { TwishCard } from "./TwishCard";
 import { trpc } from "@/app/_trpc/client";
 
-export default function TwishList() {
-    const twishes = trpc.twish.getAllTwishes.useQuery();
+export default function TwishList({ userIdParam }: { userIdParam?: string }) {
+    const twishes = trpc.twish.getAllTwishes.useQuery({ userId: userIdParam });
 
     if(twishes.isLoading){
         return <div>Loading...</div>

@@ -4,7 +4,7 @@ import { likes, pictures, twishes, users } from "@/db/schema";
 import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 
-export async function getFeedTwishes() {
+export async function getFeedTwishes(userId?: string) {
   // 1. CTE for Comment Counts
   /* const commentCounts = db.$with("comment_counts").as(
     db.select({
@@ -56,7 +56,7 @@ export async function getFeedTwishes() {
   const mainProfilePictures = alias(pictures, "main_profile_pictures");
   const originalProfilePictures = alias(pictures, "original_profile_pictures");
 
-  const feedTwishes = await db
+  const feedTwishes = db
     .with(likeCounts, retwishCounts) // Include all CTEs
     .select({
       id: twishes.id,
@@ -93,10 +93,13 @@ export async function getFeedTwishes() {
     .leftJoin(originalAuthor, eq(originalTwish.authorId, originalAuthor.id))
     .leftJoin(mainProfilePictures, eq(mainProfilePictures.id, users.profilePictureId))
     .leftJoin(originalProfilePictures, eq(originalProfilePictures.id, originalAuthor.profilePictureId))
-    .orderBy(desc(twishes.createdAt))
-    .limit(20);
+    .orderBy(desc(twishes.createdAt));
+  
+    if(userId){
+      feedTwishes.where(eq(twishes.authorId, userId));
+    }
 
-  return feedTwishes;
+  return await feedTwishes.limit(20);
 }
 
 export const newTwishService = async (input: TwishInputType) => {

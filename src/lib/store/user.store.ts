@@ -14,6 +14,7 @@ export interface User {
 type UserState = {
   user: User | null;
   setUser: <K extends keyof User>(field: K, value: User[K]) => void;
+  setUserObject: (user: User) => void;
   clearUser: () => void;
 };
 
@@ -25,7 +26,8 @@ export const useUserStore = create<UserState>()(
         setUser: (field, value) =>
           set((state) => ({
             user: state.user ? { ...state.user, [field]: value } : null,
-          })),
+        })),
+        setUserObject: (user: User) => set((state) => ({ ...state, user })),
         clearUser: () => set({ user: null }),
       }),
       {

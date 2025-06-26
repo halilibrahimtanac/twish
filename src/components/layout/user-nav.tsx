@@ -17,11 +17,12 @@ import { useRouter } from "next/navigation";
 
 
 export function UserNav() {
-  const { user } = useUserStore();
+  const { user, clearUser } = useUserStore();
   const router = useRouter();
 
   const logout = trpc.user.logout.useMutation({
     onSuccess: () => {
+      clearUser();
       router.push("/login");
     },
     onError: (error) => {
