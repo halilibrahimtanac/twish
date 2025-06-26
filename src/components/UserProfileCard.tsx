@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { User, useUserStore } from "@/lib/store/user.store";
 import { cn, initials } from "@/lib/utils";
-import { Mail, MapPin, Link as LinkIcon, Edit, Camera } from "lucide-react";
+import { SaveUserInputType } from "@/server/routers/user/user.input";
+import { MapPin, Link as LinkIcon, Edit, Camera } from "lucide-react";
 import { useState, useRef, ChangeEvent } from "react";
 
 export function UserProfileCard({
@@ -55,22 +56,37 @@ export function UserProfileCard({
   };
 
   const handleSave = async () => {
+    const updateObj: SaveUserInputType = { id: id ?? "" };
+
     let newProfilePictureUrl = profilePictureUrl === initialProfilePictureUrl ? undefined : profilePictureUrl;
     let newBackgroundPictureUrl = backgroundPictureUrl === initialBackgroundPictureUrl ? undefined : backgroundPictureUrl;
 
     if (profilePictureFile && id) {
         const uploadedProfileUrl = await uploadFile(profilePictureFile, id);
         newProfilePictureUrl = `/uploads/${id}/${uploadedProfileUrl}`;
+        updateObj.profilePictureUrl = newProfilePictureUrl;
     }
 
     if (backgroundPictureFile && id) {
         const uploadedBackgroundUrl = await uploadFile(backgroundPictureFile, id);
         newBackgroundPictureUrl = `/uploads/${id}/${uploadedBackgroundUrl}`;
+        updateObj.backgroundPictureUrl = newBackgroundPictureUrl;
+    }
+
+    if(name !== initialName){
+      updateObj.name = name;
+    }
+
+    if(bio !== initialBio){
+      updateObj.bio = bio;
+    }
+
+    if(Object.keys(updateObj).length > 1){
+      await updateUserInfo.mutateAsync(updateObj);
+      setUser("profilePictureUrl", newProfilePictureUrl || initialProfilePictureUrl);
+      setUser("backgroundPictureUrl", newBackgroundPictureUrl || initialBackgroundPictureUrl);
     }
     
-    await updateUserInfo.mutateAsync({ id: id ?? "", name, bio, profilePictureUrl: newProfilePictureUrl, backgroundPictureUrl: newBackgroundPictureUrl });
-    setUser("profilePictureUrl", newProfilePictureUrl || initialProfilePictureUrl);
-    setUser("backgroundPictureUrl", newBackgroundPictureUrl || initialBackgroundPictureUrl);
     setIsEditing(false);
   };
 
@@ -149,28 +165,9 @@ export function UserProfileCard({
         </div>
       </div>
 
-      <div className="pt-20 p-6 space-y-4">
-        <div className="flex justify-end gap-2">
-          {isEditing ? (
-            <>
-              <Button variant="outline" onClick={handleCancel}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave}>Save</Button>
-            </>
-          ) : (
-            <>
-              <Button variant="outline" size="icon">
-                <Mail className="h-4 w-4" />
-              </Button>
-              <Button onClick={() => setIsEditing(true)}>
-                <Edit className="mr-2 h-4 w-4" /> Edit Profile
-              </Button>
-            </>
-          )}
-        </div>
-
-        <div>
+      <div className="pt-15 p-6 space-y-4">
+        <div className="flex justify-between gap-2">
+          <div className="w-fit">
           {isEditing ? (
             <div className="space-y-2">
               <label htmlFor="name" className="text-sm font-medium text-muted-foreground">Name</label>
@@ -181,6 +178,24 @@ export function UserProfileCard({
           )}
           <p className={cn("text-muted-foreground", isEditing && "mt-2")}>@{username}</p>
         </div>
+
+          {isEditing ? (
+            <>
+              <Button variant="outline" onClick={handleCancel}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave}>Save</Button>
+            </>
+          ) : (
+            <>
+              <Button onClick={() => setIsEditing(true)}>
+                <Edit className="mr-2 h-4 w-4" /> Edit Profile
+              </Button>
+            </>
+          )}
+        </div>
+
+        
 
         <div>
           {isEditing ? (

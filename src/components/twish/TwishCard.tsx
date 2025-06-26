@@ -31,7 +31,7 @@ export interface TwishData {
     authorId: string | null;
     authorName: string | null;
     authorUsername: string | null;
-    authorAvatarId: string | null;
+    authorAvatarUrl: string | null;
   };
   originalLikes: number;
   originalLikedByUserIds?: string[];

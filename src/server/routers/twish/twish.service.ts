@@ -1,6 +1,6 @@
 import db from "@/db";
 import { LikeTwishInput, ReTwishInput, TwishInputType } from "./twish.input";
-import { likes, twishes, users } from "@/db/schema";
+import { likes, pictures, twishes, users } from "@/db/schema";
 import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 
@@ -53,6 +53,8 @@ export async function getFeedTwishes() {
   // 4. Aliases for joining the original twish and its author
   const originalTwish = alias(twishes, "original_twish");
   const originalAuthor = alias(users, "original_author");
+  const mainProfilePictures = alias(pictures, "main_profile_pictures");
+  const originalProfilePictures = alias(pictures, "original_profile_pictures");
 
   const feedTwishes = await db
     .with(likeCounts, retwishCounts) // Include all CTEs
@@ -64,7 +66,7 @@ export async function getFeedTwishes() {
       authorId: users.id,
       authorName: users.name,
       authorUsername: users.username,
-      authorAvatarId: users.profilePictureId,
+      authorAvatarUrl: mainProfilePictures.url,
       // Aggregated data from CTEs
       likes: sql<number>`coalesce((select count from like_counts lkc where lkc.twish_id = ${twishes.id}), 0)`.mapWith(Number),
       likedByUserIds: sql<string[]>`(select liked_by_user_ids from like_counts lkc where lkc.twish_id = ${twishes.id})`.mapWith((csv) => csv ? csv.split(',').filter(Boolean) : []),
@@ -77,7 +79,7 @@ export async function getFeedTwishes() {
         authorId: originalAuthor.id,
         authorName: originalAuthor.name,
         authorUsername: originalAuthor.username,
-        authorAvatarId: originalAuthor.profilePictureId,
+        authorAvatarUrl: originalProfilePictures.url,
       },
       originalLikes: sql<number>`coalesce((select count from like_counts lkc where lkc.twish_id = ${twishes.originalTwishId}), 0)`.mapWith(Number),
       originalLikedByUserIds: sql<string[]>`(select liked_by_user_ids from like_counts lkc where lkc.twish_id = ${twishes.originalTwishId})`.mapWith((csv) => csv ? csv.split(',').filter(Boolean) : []),
@@ -89,6 +91,8 @@ export async function getFeedTwishes() {
     .innerJoin(users, eq(twishes.authorId, users.id))
     .leftJoin(originalTwish, eq(twishes.originalTwishId, originalTwish.id))
     .leftJoin(originalAuthor, eq(originalTwish.authorId, originalAuthor.id))
+    .leftJoin(mainProfilePictures, eq(mainProfilePictures.id, users.profilePictureId))
+    .leftJoin(originalProfilePictures, eq(originalProfilePictures.id, originalAuthor.profilePictureId))
     .orderBy(desc(twishes.createdAt))
     .limit(20);
 
