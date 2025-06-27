@@ -57,7 +57,7 @@ export function TwishCard({ twish }: TwishCardProps) {
       
       <TwishHeader viewAuthorName={viewAuthorName} viewAuthorNameInitials={viewAuthorNameInitials} viewAuthorUserName={viewAuthorUserName} viewCreatedAt={viewCreatedAt} twish={twish}/>
 
-      <TwishContent content={twish.content}/>
+      <TwishContent content={twish.content || twish.originalTwish?.content || ""}/>
 
       <Separator className="!h-[0.5px]" />
 

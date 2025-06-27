@@ -17,7 +17,8 @@ export const likeTwishInput = z.object({
 export const reTwishInput = z.object({
     content: z.string().min(1),
     originalTwishId: z.string().min(1),
-    userId: z.string().min(1)
+    userId: z.string().min(1),
+    type: z.string().default("original")
 });
 
 export type GetFeedTwishes = z.infer<typeof getFeedTwishesInput>;

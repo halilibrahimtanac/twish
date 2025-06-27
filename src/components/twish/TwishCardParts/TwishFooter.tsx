@@ -1,17 +1,20 @@
-import React from 'react'
-import { TwishData } from '../TwishCard'
-import { CardFooter } from '@/components/ui/card';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { TooltipIconButton } from '@/components/ui/tooltip-icon-button';
-import { Heart, MessageCircle, Repeat } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useUserStore } from '@/lib/store/user.store';
-import { trpc } from '@/app/_trpc/client';
-import { toast } from 'sonner';
+// src/components/twish/TwishFooter.tsx
+
+import React, { useState } from "react";
+import { toast } from "sonner";
+import { CardFooter } from "@/components/ui/card";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { Heart, MessageCircle, Repeat } from "lucide-react";
+import { TwishData } from "../TwishCard";
+import { trpc } from "@/app/_trpc/client";
+import { useUserStore } from "@/lib/store/user.store";
+import { TooltipIconButton } from "@/components/ui/tooltip-icon-button";
+import { RetwishModal } from "../RetwishModal";
+
 
 interface Props {
-    twish: TwishData;
-
+  twish: TwishData;
 }
 
 const resultFunctions = (
@@ -30,21 +33,22 @@ const resultFunctions = (
 });
 
 const TwishFooter: React.FC<Props> = ({ twish }) => {
+  const [isRetwishModalOpen, setIsRetwishModalOpen] = useState(false);
   const utils = trpc.useUtils();
+  const { user } = useUserStore();
+
   const likeTwish = trpc.twish.likeTwish.useMutation({
     ...resultFunctions(utils, "Failed to like twish"),
   });
-  const reTwish = trpc.twish.reTwish.useMutation({
-    ...resultFunctions(utils, "Failed to retwish"),
-  });
-  const { user } = useUserStore();
+  
   const viewLikes = twish.originalTwish?.authorUsername ? twish.originalLikes : twish.likes;
   const viewRetwishes = twish.originalTwish?.authorUsername ? twish.originalRetwishes : twish.retwishes;
   const viewLikedByUsers = twish.originalTwish?.authorUsername ? twish.originalLikedByUserIds : twish.likedByUserIds;
   const viewRetwishedByUsers = twish.originalTwish?.authorUsername ? twish.originalRetwishedByUserIds : twish.retwishedByUserIds;
     
   return (
-    <CardFooter className="py-0 px-2">
+    <>
+      <CardFooter className="py-0 px-2">
         <TooltipProvider>
           <div className="flex w-full items-center justify-start gap-1 text-muted-foreground">
             {/* Like Button */}
@@ -81,24 +85,26 @@ const TwishFooter: React.FC<Props> = ({ twish }) => {
             <TooltipIconButton
               IconComponent={Repeat}
               tooltipText="Retwish"
-              hoverClassName={cn("group-hover:text-green-500", viewRetwishedByUsers?.includes(user?.id || "") &&
-                "text-green-500")}
-              onClick={() =>
-                reTwish.mutate({
-                  content: twish.content,
-                  userId: user?.id || "",
-                  originalTwishId: twish.originalTwish?.id || twish.id,
-                })
-              }
+              hoverClassName={cn(
+                "group-hover:text-green-500",
+                viewRetwishedByUsers?.includes(user?.id || "") && "text-green-500"
+              )}
+              onClick={() => setIsRetwishModalOpen(true)}
             />
-
             <span className="min-w-fit pr-2 text-sm font-medium">
               {viewRetwishes}
             </span>
           </div>
         </TooltipProvider>
       </CardFooter>
-  )
-}
 
-export default TwishFooter
+      <RetwishModal 
+        twish={twish}
+        isOpen={isRetwishModalOpen}
+        onOpenChange={setIsRetwishModalOpen}
+      />
+    </>
+  );
+};
+
+export default TwishFooter;

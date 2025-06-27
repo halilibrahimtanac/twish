@@ -157,7 +157,7 @@ export const likeTwishService = async (input: LikeTwishInput) => {
 };
 
 export const reTwishService = async (input: ReTwishInput) => {
-  const { content, originalTwishId, userId } = input;
+  const { content, originalTwishId, userId, type } = input;
   
   // First, verify that the original twish exists
   const originalTwish = await db
@@ -189,7 +189,7 @@ export const reTwishService = async (input: ReTwishInput) => {
       content,
       authorId: userId,
       originalTwishId,
-      type: "retwish",
-    })
+      type,
+  })
     .returning();
 };
