@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TwishData } from "./TwishCard";
 import { trpc } from "@/app/_trpc/client";
 import { useUserStore } from "@/lib/store/user.store";
+import EmbeddedTwish from "./EmbeddedTwish";
 
 
 
@@ -76,12 +77,12 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
     reTwish.mutate({
       content: quoteContent,
       userId: user.id,
-      originalTwishId: twish.originalTwish?.id || twish.id,
+      originalTwishId: (twish.type === "retwish" ? twish.originalTwish?.id : twish.id) as string,
       type: "quote"
     });
   };
   
-  const embeddedTwish = twish.originalTwish?.authorName ? twish.originalTwish : twish;
+  const embeddedTwish = (twish.type === "retwish" ? twish.originalTwish : twish) as TwishData;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -95,7 +96,9 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
           <div className="flex gap-4">
             <Avatar>
               <AvatarImage src={user?.profilePictureUrl ?? undefined} />
-              <AvatarFallback>{user?.username?.charAt(0).toUpperCase()}</AvatarFallback>
+              <AvatarFallback>
+                {user?.username?.charAt(0).toUpperCase()}
+              </AvatarFallback>
             </Avatar>
             <Textarea
               placeholder="Add a comment..."
@@ -106,42 +109,44 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
           </div>
 
           {/* Embedded Twish to be quoted/retwished */}
-          <div className="ml-2 rounded-xl border p-4">
-            <div className="mb-2 flex items-center gap-2">
-              <Avatar className="h-6 w-6">
-                <AvatarImage src={embeddedTwish.authorAvatarUrl ?? undefined} />
-                <AvatarFallback>{embeddedTwish.authorName?.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <span className="font-bold">{embeddedTwish.authorName}</span>
-              <span className="text-sm text-muted-foreground">@{embeddedTwish.authorUsername}</span>
-            </div>
-            <p className="text-muted-foreground">{embeddedTwish.content}</p>
-          </div>
+          <EmbeddedTwish
+            embeddedTwish={{
+              authorAvatarUrl: embeddedTwish.authorAvatarUrl,
+              authorName: embeddedTwish.authorName,
+              authorUsername: embeddedTwish.authorUsername,
+              content: embeddedTwish.content,
+              createdAt: embeddedTwish.createdAt
+            }}
+          />
         </div>
 
         {/* Modal Footer Buttons */}
         <DialogFooter className="gap-2 sm:justify-between">
-           <DialogClose asChild>
-            <Button type="button" variant="outline" className="w-full sm:w-auto">
+          <DialogClose asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
           </DialogClose>
           <div className="flex flex-col-reverse gap-2 sm:flex-row">
             <Button
-                variant="secondary"
-                className="w-full sm:w-auto"
-                onClick={handleRetwish}
-                disabled={reTwish.isPending}
+              variant="secondary"
+              className="w-full sm:w-auto"
+              onClick={handleRetwish}
+              disabled={reTwish.isPending}
             >
-                Retwish
+              Retwish
             </Button>
             <Button
-                type="submit"
-                className="w-full sm:w-auto"
-                onClick={handleQuoteTwish}
-                disabled={!quoteContent.trim() || reTwish.isPending}
+              type="submit"
+              className="w-full sm:w-auto"
+              onClick={handleQuoteTwish}
+              disabled={!quoteContent.trim() || reTwish.isPending}
             >
-                Quote
+              Quote
             </Button>
           </div>
         </DialogFooter>

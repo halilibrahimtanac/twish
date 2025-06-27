@@ -17,6 +17,7 @@ interface Props {
 }
 
 const TwishHeader: React.FC<Props> = ({ viewAuthorName, viewAuthorNameInitials, viewAuthorUserName, viewCreatedAt, twish }) => {
+  const avatarUrl = twish.type === "retwish" ? twish.originalTwish?.authorAvatarUrl : twish.authorAvatarUrl;
   return (
     <CardHeader className="flex flex-row items-center gap-2 space-y-0 px-3">
         
@@ -24,7 +25,7 @@ const TwishHeader: React.FC<Props> = ({ viewAuthorName, viewAuthorNameInitials, 
           <HoverCardTrigger asChild>
             <a href={`/${viewAuthorName}`} className="flex-shrink-0">
               <Avatar>
-                <AvatarImage src={ twish.originalTwish?.authorAvatarUrl || twish.authorAvatarUrl || undefined} alt={twish.authorName} />
+                <AvatarImage src={avatarUrl || undefined} alt={twish.authorName} />
                 <AvatarFallback>
                   {viewAuthorNameInitials}
                 </AvatarFallback>

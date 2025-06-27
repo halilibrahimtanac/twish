@@ -41,10 +41,10 @@ const TwishFooter: React.FC<Props> = ({ twish }) => {
     ...resultFunctions(utils, "Failed to like twish"),
   });
   
-  const viewLikes = twish.originalTwish?.authorUsername ? twish.originalLikes : twish.likes;
-  const viewRetwishes = twish.originalTwish?.authorUsername ? twish.originalRetwishes : twish.retwishes;
-  const viewLikedByUsers = twish.originalTwish?.authorUsername ? twish.originalLikedByUserIds : twish.likedByUserIds;
-  const viewRetwishedByUsers = twish.originalTwish?.authorUsername ? twish.originalRetwishedByUserIds : twish.retwishedByUserIds;
+  const viewLikes = twish.type === "retwish" ? twish.originalLikes : twish.likes;
+  const viewRetwishes = twish.type === "retwish" ? twish.originalRetwishes : twish.retwishes;
+  const viewLikedByUsers = twish.type === "retwish" ? twish.originalLikedByUserIds : twish.likedByUserIds;
+  const viewRetwishedByUsers = twish.type === "retwish" ? twish.originalRetwishedByUserIds : twish.retwishedByUserIds;
     
   return (
     <>
@@ -62,7 +62,7 @@ const TwishFooter: React.FC<Props> = ({ twish }) => {
               )}
               onClick={() =>
                 likeTwish.mutate({
-                  twishId: twish.originalTwish?.id || twish.id,
+                  twishId: (twish.type === "retwish" ? twish.originalTwish?.id : twish.id) as string,
                   username: user?.username || "",
                 })
               }
