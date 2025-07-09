@@ -15,7 +15,7 @@ export const likeTwishInput = z.object({
 });
 
 export const reTwishInput = z.object({
-    content: z.string().min(1),
+    content: z.string(),
     originalTwishId: z.string().min(1),
     userId: z.string().min(1),
     type: z.string().default("original")

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -16,6 +16,7 @@ import { trpc } from "@/app/_trpc/client";
 import { useUserStore } from "@/lib/store/user.store";
 import EmbeddedTwish from "./EmbeddedTwish";
 import { resultFunctions } from "@/lib/utils";
+import { TwishContext } from "./TwishList";
 
 interface RetwishModalProps {
   twish: TwishData;
@@ -28,6 +29,7 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
   isOpen,
   onOpenChange,
 }) => {
+  const { userId } = useContext(TwishContext);
   const [quoteContent, setQuoteContent] = useState("");
   const { user } = useUserStore();
   const utils = trpc.useUtils();
@@ -37,7 +39,8 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
       utils,
       twish.id,
       () => onOpenChange(false), // Close modal on success
-      "Failed to post."
+      "Failed to post.",
+      userId
     )
   );
 
@@ -47,7 +50,7 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
     reTwish.mutate({
       content: "",
       userId: user.id,
-      originalTwishId: twish.originalTwish?.id || twish.id,
+      originalTwishId: (twish.type === "retwish" ? twish.originalTwish?.id : twish.id) as string,
       type: "retwish"
     });
   };

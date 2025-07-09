@@ -35,14 +35,20 @@ export const resultFunctions = (
   errorMessage: string = "",
   userIdParam?: string
 ) => ({
-  onSuccess: async () => {
-    const updatedTwish = await utils.twish.getSingleTwish.fetch({ twishId });
-    utils.twish.getAllTwishes.setData({ userId: userIdParam }, (old) => old?.map(t => t.id === updatedTwish.id ? updatedTwish : t))
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onSuccess: async (data: any) => {
+    if(data){
+      utils.twish.getAllTwishes.setData({ userId: userIdParam }, (old) => [data, ...(old ?? [])])
+    }else {
+      const updatedTwish = await utils.twish.getSingleTwish.fetch({ twishId });
+      utils.twish.getAllTwishes.setData({ userId: userIdParam }, (old) => old?.map(t => t.id === updatedTwish.id ? updatedTwish : t));
+    }
     onSuccessCallback?.();
   },
-  onError: () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onError: (error: any) => {
     toast("Error", {
-      description: errorMessage || "Something went wrong. Please try again.",
+      description: error.message || errorMessage || "Something went wrong. Please try again.",
       closeButton: true,
     });
   },

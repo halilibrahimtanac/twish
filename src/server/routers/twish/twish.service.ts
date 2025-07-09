@@ -185,8 +185,7 @@ export const reTwishService = async (input: ReTwishInput) => {
     throw new Error("User not found");
   }
 
-  // Create the retwish
-  return await db
+  const newTwish = await db
     .insert(twishes)
     .values({
       id: crypto.randomUUID(),
@@ -196,6 +195,10 @@ export const reTwishService = async (input: ReTwishInput) => {
       type,
   })
     .returning();
+
+  const fullNewTwish = twishDbQuery().where(eq(twishes.id, newTwish[0].id)).limit(1);
+
+  return (await fullNewTwish)[0];
 };
 
 export const getSingleTwish = async (twishId: string) => {

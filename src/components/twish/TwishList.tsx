@@ -1,6 +1,10 @@
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { TwishCard } from "./TwishCard";
 import { trpc } from "@/app/_trpc/client";
+import { createContext } from "react";
+
+type TwishContextType = { userId?: string };
+export const TwishContext = createContext<TwishContextType>({});
 
 export default function TwishList({ userIdParam }: { userIdParam?: string }) {
     const twishes = trpc.twish.getAllTwishes.useQuery({ userId: userIdParam });
@@ -14,6 +18,7 @@ export default function TwishList({ userIdParam }: { userIdParam?: string }) {
     }
     
     return (
+      <TwishContext.Provider value={{ userId: userIdParam }}>
       <TooltipProvider> 
         <main className="sm:w-auto w-full min-h-screen bg-background flex flex-col items-center">
           <div className="w-full flex flex-col">
@@ -25,5 +30,6 @@ export default function TwishList({ userIdParam }: { userIdParam?: string }) {
           </div>
         </main>
       </TooltipProvider>
+      </TwishContext.Provider>
     );
   }
