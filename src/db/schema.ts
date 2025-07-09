@@ -29,6 +29,7 @@ export const twishes = sqliteTable("twishes", {
   authorId: text("author_id").notNull().references(() => users.id),
   originalTwishId: text("original_twish_id"), 
   type: text("type").notNull().default("original"),
+  parentTwishId: text("parent_twish_id"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
 }, (self) => ([

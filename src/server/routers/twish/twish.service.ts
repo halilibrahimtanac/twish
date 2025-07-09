@@ -4,20 +4,20 @@ import { likes, pictures, twishes, users } from "@/db/schema";
 import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 
-export async function getFeedTwishes(userId?: string) {
-  // 1. CTE for Comment Counts
-  /* const commentCounts = db.$with("comment_counts").as(
+function twishDbQuery(){
+// 1. CTE for Reply Counts
+  /* const replyCounts = db.$with("reply_counts").as(
     db.select({
-        originalTwishId: twishes.originalTwishId,
+        parentTwishId: twishes.parentTwishId,
         count: sql<number>`count(${twishes.id})`.as('count')
       })
       .from(twishes)
-      // We only count twishes that are 'comments' and have a parent
+      // We only count twishes that are 'replies' and have a parent
       .where(and(
-        eq(twishes.type, 'comment'),
-        isNotNull(twishes.originalTwishId)
+        eq(twishes.type, 'reply'),
+        isNotNull(twishes.parentTwishId)
       ))
-      .groupBy(twishes.originalTwishId)
+      .groupBy(twishes.parentTwishId)
   ); */
 
   // 2. CTE for Like Counts
@@ -56,7 +56,7 @@ export async function getFeedTwishes(userId?: string) {
   const mainProfilePictures = alias(pictures, "main_profile_pictures");
   const originalProfilePictures = alias(pictures, "original_profile_pictures");
 
-  const feedTwishes = db
+  return db
     .with(likeCounts, retwishCounts) // Include all CTEs
     .select({
       id: twishes.id,
@@ -94,6 +94,10 @@ export async function getFeedTwishes(userId?: string) {
     .leftJoin(mainProfilePictures, eq(mainProfilePictures.id, users.profilePictureId))
     .leftJoin(originalProfilePictures, eq(originalProfilePictures.id, originalAuthor.profilePictureId))
     .orderBy(desc(twishes.createdAt));
+}
+
+export async function getFeedTwishes(userId?: string) {
+  const feedTwishes = twishDbQuery();
   
     if(userId){
       feedTwishes.where(eq(twishes.authorId, userId));
@@ -193,3 +197,11 @@ export const reTwishService = async (input: ReTwishInput) => {
   })
     .returning();
 };
+
+export const getSingleTwish = async (twishId: string) => {
+  const twishQuery = twishDbQuery();
+
+  twishQuery.where(eq(twishes.id, twishId)).limit(1);
+
+  return (await twishQuery)[0];
+}

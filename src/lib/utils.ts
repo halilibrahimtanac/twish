@@ -1,4 +1,6 @@
+import { trpc } from "@/app/_trpc/client";
 import { clsx, type ClassValue } from "clsx";
+import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -24,3 +26,24 @@ export const dateStringConverter = (dateString: string): string => {
 };
 
 export const initials = (str: string | undefined): string => str ? str.trim().split(" ").map((n) => n[0].toUpperCase()).join("") : "";
+
+
+export const resultFunctions = (
+  utils: ReturnType<typeof trpc.useUtils>,
+  twishId: string,
+  onSuccessCallback?: () => void,
+  errorMessage: string = "",
+  userIdParam?: string
+) => ({
+  onSuccess: async () => {
+    const updatedTwish = await utils.twish.getSingleTwish.fetch({ twishId });
+    utils.twish.getAllTwishes.setData({ userId: userIdParam }, (old) => old?.map(t => t.id === updatedTwish.id ? updatedTwish : t))
+    onSuccessCallback?.();
+  },
+  onError: () => {
+    toast("Error", {
+      description: errorMessage || "Something went wrong. Please try again.",
+      closeButton: true,
+    });
+  },
+});

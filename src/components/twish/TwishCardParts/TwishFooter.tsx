@@ -1,10 +1,7 @@
-// src/components/twish/TwishFooter.tsx
-
 import React, { useState } from "react";
-import { toast } from "sonner";
 import { CardFooter } from "@/components/ui/card";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn, resultFunctions } from "@/lib/utils";
 import { Heart, MessageCircle, Repeat } from "lucide-react";
 import { TwishData } from "../TwishCard";
 import { trpc } from "@/app/_trpc/client";
@@ -12,25 +9,9 @@ import { useUserStore } from "@/lib/store/user.store";
 import { TooltipIconButton } from "@/components/ui/tooltip-icon-button";
 import { RetwishModal } from "../RetwishModal";
 
-
 interface Props {
   twish: TwishData;
 }
-
-const resultFunctions = (
-  utils: ReturnType<typeof trpc.useUtils>,
-  errorMessage: string = ""
-) => ({
-  onSuccess: () => {
-    utils.twish.getAllTwishes.invalidate();
-  },
-  onError: () => {
-    toast("Error", {
-      description: errorMessage || "Something went wrong. Please try again.",
-      closeButton: true,
-    });
-  },
-});
 
 const TwishFooter: React.FC<Props> = ({ twish }) => {
   const [isRetwishModalOpen, setIsRetwishModalOpen] = useState(false);
@@ -38,7 +19,7 @@ const TwishFooter: React.FC<Props> = ({ twish }) => {
   const { user } = useUserStore();
 
   const likeTwish = trpc.twish.likeTwish.useMutation({
-    ...resultFunctions(utils, "Failed to like twish"),
+    ...resultFunctions(utils, twish.id, undefined, "Failed to like twish"),
   });
   
   const viewLikes = twish.type === "retwish" ? twish.originalLikes : twish.likes;

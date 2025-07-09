@@ -15,32 +15,13 @@ import { TwishData } from "./TwishCard";
 import { trpc } from "@/app/_trpc/client";
 import { useUserStore } from "@/lib/store/user.store";
 import EmbeddedTwish from "./EmbeddedTwish";
-
-
+import { resultFunctions } from "@/lib/utils";
 
 interface RetwishModalProps {
   twish: TwishData;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-// You can move this helper to a shared utils file if you use it elsewhere
-const resultFunctions = (
-  utils: ReturnType<typeof trpc.useUtils>,
-  onSuccessCallback: () => void,
-  errorMessage: string = ""
-) => ({
-  onSuccess: () => {
-    utils.twish.getAllTwishes.invalidate();
-    onSuccessCallback(); // To close the modal
-  },
-  onError: () => {
-    toast("Error", {
-      description: errorMessage || "Something went wrong. Please try again.",
-      closeButton: true,
-    });
-  },
-});
 
 export const RetwishModal: React.FC<RetwishModalProps> = ({
   twish,
@@ -54,6 +35,7 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
   const reTwish = trpc.twish.reTwish.useMutation(
     resultFunctions(
       utils,
+      twish.id,
       () => onOpenChange(false), // Close modal on success
       "Failed to post."
     )
