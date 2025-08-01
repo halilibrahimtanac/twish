@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { CardFooter } from "@/components/ui/card";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn, resultFunctions } from "@/lib/utils";
@@ -17,12 +17,19 @@ interface Props {
 const TwishFooter: React.FC<Props> = ({ twish }) => {
   const { userId } = useContext(TwishContext);
   const [isRetwishModalOpen, setIsRetwishModalOpen] = useState(false);
+  const [isComment, setIsComment] = useState(false);
   const utils = trpc.useUtils();
   const { user } = useUserStore();
 
   const likeTwish = trpc.twish.likeTwish.useMutation({
     ...resultFunctions(utils, twish.id, undefined, "Failed to like twish", userId),
   });
+
+  useEffect(() => {
+    if(!isRetwishModalOpen){
+      setIsComment(false);
+    }
+  }, [isRetwishModalOpen])
   
   const viewLikes = twish.type === "retwish" ? twish.originalLikes : twish.likes;
   const viewRetwishes = twish.type === "retwish" ? twish.originalRetwishes : twish.retwishes;
@@ -59,6 +66,10 @@ const TwishFooter: React.FC<Props> = ({ twish }) => {
               IconComponent={MessageCircle}
               tooltipText="Comment"
               hoverClassName="group-hover:text-blue-500"
+              onClick={() => {
+                setIsRetwishModalOpen(true);
+                setIsComment(true);
+              }}
             />
             <span className="min-w-fit pr-2 text-sm font-medium">
               {twish.comments}
@@ -85,6 +96,7 @@ const TwishFooter: React.FC<Props> = ({ twish }) => {
         twish={twish}
         isOpen={isRetwishModalOpen}
         onOpenChange={setIsRetwishModalOpen}
+        isComment={isComment}
       />
     </>
   );

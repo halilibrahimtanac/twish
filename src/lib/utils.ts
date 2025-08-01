@@ -37,7 +37,7 @@ export const resultFunctions = (
 ) => ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSuccess: async (data: any) => {
-    if(data){
+    if(data && data.type !== "comment"){
       utils.twish.getAllTwishes.setData({ userId: userIdParam }, (old) => [data, ...(old ?? [])])
     }else {
       const updatedTwish = await utils.twish.getSingleTwish.fetch({ twishId });

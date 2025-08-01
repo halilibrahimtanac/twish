@@ -1,7 +1,7 @@
 import db from "@/db";
 import { LikeTwishInput, ReTwishInput, TwishInputType } from "./twish.input";
 import { likes, pictures, twishes, users } from "@/db/schema";
-import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 
 function twishDbQuery(){
@@ -98,10 +98,14 @@ function twishDbQuery(){
 
 export async function getFeedTwishes(userId?: string) {
   const feedTwishes = twishDbQuery();
+
+  const conditions = [or(eq(twishes.type, "quote"), eq(twishes.type, "retwish"), eq(twishes.type, "original"))]
   
     if(userId){
-      feedTwishes.where(eq(twishes.authorId, userId));
+      conditions.push(eq(twishes.authorId, userId));
     }
+
+    feedTwishes.where(and(...conditions));
 
   return await feedTwishes.limit(20);
 }
