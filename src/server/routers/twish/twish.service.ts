@@ -5,20 +5,19 @@ import { and, desc, eq, isNotNull, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 
 function twishDbQuery(){
-// 1. CTE for Reply Counts
-  /* const replyCounts = db.$with("reply_counts").as(
+  // 1. CTE for Reply Counts
+  const replyCounts = db.$with("reply_counts").as(
     db.select({
-        parentTwishId: twishes.parentTwishId,
+        originalTwishId: twishes.originalTwishId,
         count: sql<number>`count(${twishes.id})`.as('count')
       })
       .from(twishes)
-      // We only count twishes that are 'replies' and have a parent
       .where(and(
-        eq(twishes.type, 'reply'),
-        isNotNull(twishes.parentTwishId)
+        eq(twishes.type, 'comment'),
+        isNotNull(twishes.originalTwishId)
       ))
-      .groupBy(twishes.parentTwishId)
-  ); */
+      .groupBy(twishes.originalTwishId)
+  );
 
   // 2. CTE for Like Counts
   const likeCounts = db.$with("like_counts").as(
@@ -57,7 +56,7 @@ function twishDbQuery(){
   const originalProfilePictures = alias(pictures, "original_profile_pictures");
 
   return db
-    .with(likeCounts, retwishCounts) // Include all CTEs
+    .with(likeCounts, retwishCounts, replyCounts) // Include all CTEs
     .select({
       id: twishes.id,
       content: twishes.content,
@@ -70,6 +69,7 @@ function twishDbQuery(){
       // Aggregated data from CTEs
       likes: sql<number>`coalesce((select count from like_counts lkc where lkc.twish_id = ${twishes.id}), 0)`.mapWith(Number),
       likedByUserIds: sql<string[]>`(select liked_by_user_ids from like_counts lkc where lkc.twish_id = ${twishes.id})`.mapWith((csv) => csv ? csv.split(',').filter(Boolean) : []),
+      comments: sql<number>`coalesce((select count from reply_counts rpc where rpc.original_twish_id = ${twishes.id}), 0)`.mapWith(Number),
       retwishes: sql<number>`coalesce((select count from retwish_counts rtc where rtc.original_twish_id = ${twishes.id}), 0)`.mapWith(Number),
       retwishedByUserIds: sql<string[]>`(select retwished_by_user_ids from retwish_counts rtc where rtc.original_twish_id = ${twishes.id})`.mapWith((csv) => csv ? csv.split(',').filter(Boolean) : []),
       originalTwish: {
