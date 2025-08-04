@@ -211,4 +211,12 @@ export const getSingleTwish = async (twishId: string) => {
   twishQuery.where(eq(twishes.id, twishId)).limit(1);
 
   return (await twishQuery)[0];
+};
+
+export const getCommentsByTwishId = async (twishId: string) => {
+  const twishQuery = twishDbQuery();
+
+  const result = await twishQuery.where(and(eq(twishes.originalTwishId, twishId), eq(twishes.type, 'comment')));
+
+  return result;
 }

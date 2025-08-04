@@ -1,12 +1,14 @@
 "use client";
 import { trpc } from "@/app/_trpc/client";
-import { TwishCard } from "@/components/twish/TwishCard";
+import { TwishCard, TwishData } from "@/components/twish/TwishCard";
 import { useParams } from "next/navigation";
 import React from "react";
 
 const Page = () => {
   const { twishId } = useParams();
-  const { data, isError, error, isFetching } = trpc.twish.getSingleTwish.useQuery({ twishId: twishId?.toString() || "" });
+  const twishIdParam = twishId?.toString() || ""
+  const { data, isError, error, isFetching } = trpc.twish.getSingleTwish.useQuery({ twishId: twishIdParam });
+  const { data:comments, isError:isErrorComments, error:commentError, isFetching:isFetchingComment } = trpc.twish.getCommentsByTwishId.useQuery({ twishId: twishIdParam });
 
   if (isFetching) {
     return <div>Loading...</div>;
@@ -20,6 +22,20 @@ const Page = () => {
     return (
       <div className="sm:w-auto w-full flex flex-col mx-auto items-center box-border p-3">
         <TwishCard twish={data} />
+        {isFetchingComment && <div>Yorumlar yükleniyor...</div>}
+        {isErrorComments && <div>Hata: {commentError?.message}</div>}
+        {comments && comments.length > 0 ? (
+          <div className="w-full flex flex-col gap-2 mt-4">
+            {comments.map((comment: TwishData) => (
+              <div key={comment.id} className="border rounded p-2">
+                <div className="font-semibold">{comment.authorName || "Anonim"}</div>
+                <div>{comment.content}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          !isFetchingComment && <div>Henüz yorum yok.</div>
+        )}
       </div>
     );
   }
