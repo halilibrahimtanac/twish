@@ -10,6 +10,7 @@ import TwishHeader from "./TwishCardParts/TwishHeader";
 import TwishContent from "./TwishCardParts/TwishContent";
 import TwishFooter from "./TwishCardParts/TwishFooter";
 import EmbeddedTwish from "./EmbeddedTwish";
+import { useRouter } from "next/navigation";
 
 export interface TwishData {
   id: string;
@@ -45,17 +46,23 @@ interface TwishCardProps {
   twish: TwishData;
 }
 
-
-
 export function TwishCard({ twish }: TwishCardProps) {
+  const router = useRouter();
   const viewAuthorName = (twish.type === "retwish" ? twish.originalTwish?.authorName : twish.authorName) as string;
   const viewAuthorUserName = (twish.type === "retwish" ? twish.originalTwish?.authorUsername : twish.authorUsername) as string;
   const viewCreatedAt = (twish.type === "retwish" ? twish.originalTwish?.createdAt : twish.createdAt) as string;
   const viewContent = (twish.type === "retwish" ? twish.originalTwish?.content : twish.content) as string;
   const viewAuthorNameInitials = initials(viewAuthorName);
 
+  const routeTwishId = {
+    quote: twish.id,
+    retwish: twish.originalTwish?.id,
+    original: twish.id,
+    comment: twish.id
+  }
+
   return (
-    <Card className="sm:min-w-2xl w-full mx-auto py-2 rounded-none gap-3 border-t-0">
+    <Card onClick={() => router.push(`/twish/${routeTwishId[twish.type as keyof typeof routeTwishId]}`)} className="sm:min-w-2xl w-full mx-auto py-2 rounded-none gap-3 border-t-0">
       {twish.type === "retwish" && <p className="ml-4 flex items-center gap-2 text-xs font-bold"> <Repeat className="w-4 h-4"/> {twish.authorName} retwished</p>}
       
       <TwishHeader viewAuthorName={viewAuthorName} viewAuthorNameInitials={viewAuthorNameInitials} viewAuthorUserName={viewAuthorUserName} viewCreatedAt={viewCreatedAt} twish={twish}/>
