@@ -62,7 +62,7 @@ export function TwishCard({ twish }: TwishCardProps) {
   }
 
   return (
-    <Card onClick={() => router.push(`/twish/${routeTwishId[twish.type as keyof typeof routeTwishId]}`)} className="sm:min-w-2xl w-full mx-auto py-2 rounded-none gap-3 border-t-0">
+    <Card onClick={() => router.push(`/twish/${routeTwishId[twish.type as keyof typeof routeTwishId]}?type=${twish.type}`)} className="sm:min-w-2xl w-full mx-auto py-2 rounded-none gap-3 border-t-0">
       {twish.type === "retwish" && <p className="ml-4 flex items-center gap-2 text-xs font-bold"> <Repeat className="w-4 h-4"/> {twish.authorName} retwished</p>}
       
       <TwishHeader viewAuthorName={viewAuthorName} viewAuthorNameInitials={viewAuthorNameInitials} viewAuthorUserName={viewAuthorUserName} viewCreatedAt={viewCreatedAt} twish={twish}/>

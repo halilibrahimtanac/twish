@@ -1,5 +1,5 @@
 import db from "@/db";
-import { LikeTwishInput, ReTwishInput, TwishInputType } from "./twish.input";
+import { GetCommentsByTwishIdInput, LikeTwishInput, ReTwishInput, TwishInputType } from "./twish.input";
 import { likes, pictures, twishes, users } from "@/db/schema";
 import { and, desc, eq, isNotNull, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
@@ -165,7 +165,7 @@ export const likeTwishService = async (input: LikeTwishInput) => {
 };
 
 export const reTwishService = async (input: ReTwishInput) => {
-  const { content, originalTwishId, userId, type } = input;
+  const { content, originalTwishId, parentTwishId, userId, type } = input;
   
   // First, verify that the original twish exists
   const originalTwish = await db
@@ -188,6 +188,7 @@ export const reTwishService = async (input: ReTwishInput) => {
   if (foundUser.length === 0) {
     throw new Error("User not found");
   }
+  
 
   const newTwish = await db
     .insert(twishes)
@@ -196,6 +197,7 @@ export const reTwishService = async (input: ReTwishInput) => {
       content,
       authorId: userId,
       originalTwishId,
+      parentTwishId,
       type,
   })
     .returning();
@@ -213,10 +215,12 @@ export const getSingleTwish = async (twishId: string) => {
   return (await twishQuery)[0];
 };
 
-export const getCommentsByTwishId = async (twishId: string) => {
+export const getCommentsByTwishId = async ({ type, twishId }: GetCommentsByTwishIdInput) => {
   const twishQuery = twishDbQuery();
 
-  const result = await twishQuery.where(and(eq(twishes.originalTwishId, twishId), eq(twishes.type, 'comment')));
+  const equalQuery = type === "comment" ? eq(twishes.parentTwishId, twishId) : eq(twishes.originalTwishId, twishId)
+
+  const result = await twishQuery.where(and(equalQuery, eq(twishes.type, 'comment')));
 
   return result;
 }

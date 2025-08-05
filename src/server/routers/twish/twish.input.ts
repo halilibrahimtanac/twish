@@ -18,6 +18,7 @@ export const reTwishInput = z.object({
     content: z.string(),
     originalTwishId: z.string().min(1),
     userId: z.string().min(1),
+    parentTwishId: z.string().optional(),
     type: z.string().default("original")
 });
 
@@ -26,6 +27,7 @@ export const getSingleTwishInput = z.object({
 });
 
 export const getCommentsByTwishId = z.object({
+    type: z.string(),
     twishId: z.string().min(1)
 })
 

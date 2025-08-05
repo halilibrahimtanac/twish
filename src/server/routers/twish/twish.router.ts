@@ -8,5 +8,5 @@ export const twishRouter = router({
     likeTwish: publicProcedure.input(likeTwishInput).mutation(async ({ input }) => twishService.likeTwishService(input)),
     reTwish: publicProcedure.input(reTwishInput).mutation(async ({ input }) => twishService.reTwishService(input)),
     getSingleTwish: publicProcedure.input(getSingleTwishInput).query(({ input }) => twishService.getSingleTwish(input.twishId)),
-    getCommentsByTwishId: publicProcedure.input(getCommentsByTwishId).query(({ input }) => twishService.getCommentsByTwishId(input.twishId))
+    getCommentsByTwishId: publicProcedure.input(getCommentsByTwishId).query(({ input }) => twishService.getCommentsByTwishId(input))
 })

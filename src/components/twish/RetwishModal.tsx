@@ -41,7 +41,7 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({ twish, isOpen, onOpe
       content: "",
       userId: user.id,
       originalTwishId: (twish.type === "retwish" ? twish.originalTwish?.id : twish.id) as string,
-      type: "retwish",
+      type: "retwish"
     });
   };
 
@@ -49,11 +49,14 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({ twish, isOpen, onOpe
     if (!user) return toast.error("You must be logged in to quote.");
     if (!quoteContent.trim()) return;
 
+    const twishId = (twish.type === "retwish" ? twish.originalTwish?.id : twish.id) as string
+
     reTwish.mutate({
       content: quoteContent,
       userId: user.id,
-      originalTwishId: (twish.type === "retwish" ? twish.originalTwish?.id : twish.id) as string,
+      originalTwishId: twish.type === "comment" ? twish.originalTwish?.id as string : twishId,
       type: type,
+      parentTwishId: twish.type === "comment" ? twishId : undefined
     });
   };
 

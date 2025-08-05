@@ -1,14 +1,16 @@
 "use client";
 import { trpc } from "@/app/_trpc/client";
 import { TwishCard, TwishData } from "@/components/twish/TwishCard";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import React from "react";
 
 const Page = () => {
   const { twishId } = useParams();
+  const searchParams = useSearchParams();
+  const type = searchParams.get('type');
   const twishIdParam = twishId?.toString() || ""
   const { data, isError, error, isFetching } = trpc.twish.getSingleTwish.useQuery({ twishId: twishIdParam });
-  const { data:comments, isError:isErrorComments, error:commentError, isFetching:isFetchingComment } = trpc.twish.getCommentsByTwishId.useQuery({ twishId: twishIdParam });
+  const { data:comments, isError:isErrorComments, error:commentError, isFetching:isFetchingComment } = trpc.twish.getCommentsByTwishId.useQuery({ type: type || "", twishId: twishIdParam });
 
   if (isFetching) {
     return <div>Loading...</div>;
