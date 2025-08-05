@@ -93,7 +93,7 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({ twish, isOpen, onOpe
           <DialogTitle>Amplify this Twish</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-4">
+        <div className="flex flex-col gap-4 py-4" onClick={(e) => e.stopPropagation()}>
           {isComment ? (
             <>
               {embeddedContent}
@@ -108,7 +108,7 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({ twish, isOpen, onOpe
         </div>
 
         {/* Modal Footer Buttons */}
-        <DialogFooter className="gap-2 sm:justify-between">
+        <DialogFooter className="gap-2 sm:justify-between" onClick={(e) => e.stopPropagation()}>
           <DialogClose asChild>
             <Button type="button" variant="outline" className="w-full sm:w-auto">
               Cancel

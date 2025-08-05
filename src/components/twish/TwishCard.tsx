@@ -67,7 +67,7 @@ export function TwishCard({ twish }: TwishCardProps) {
       
       <TwishHeader viewAuthorName={viewAuthorName} viewAuthorNameInitials={viewAuthorNameInitials} viewAuthorUserName={viewAuthorUserName} viewCreatedAt={viewCreatedAt} twish={twish}/>
 
-      <TwishContent content={viewContent}/>
+      <TwishContent content={viewContent} originalAuthorUsername={twish.type === "comment" ? twish.originalTwish?.authorUsername : ""}/>
 
       {twish.type === "quote" && <EmbeddedTwish embeddedTwish={{
         content: twish.originalTwish?.content || "",

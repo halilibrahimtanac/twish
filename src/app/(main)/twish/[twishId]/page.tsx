@@ -25,12 +25,9 @@ const Page = () => {
         {isFetchingComment && <div>Yorumlar yükleniyor...</div>}
         {isErrorComments && <div>Hata: {commentError?.message}</div>}
         {comments && comments.length > 0 ? (
-          <div className="w-full flex flex-col gap-2 mt-4">
+          <div className="w-full flex flex-col">
             {comments.map((comment: TwishData) => (
-              <div key={comment.id} className="border rounded p-2">
-                <div className="font-semibold">{comment.authorName || "Anonim"}</div>
-                <div>{comment.content}</div>
-              </div>
+              <TwishCard key={comment.id} twish={comment}/>
             ))}
           </div>
         ) : (

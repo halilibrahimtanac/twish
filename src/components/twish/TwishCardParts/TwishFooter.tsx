@@ -50,11 +50,12 @@ const TwishFooter: React.FC<Props> = ({ twish }) => {
                 viewLikedByUsers?.includes(user?.id || "") &&
                   "text-red-500 fill-red-500"
               )}
-              onClick={() =>
+              onClick={(e) =>{
+                e.stopPropagation();
                 likeTwish.mutate({
                   twishId: (twish.type === "retwish" ? twish.originalTwish?.id : twish.id) as string,
                   username: user?.username || "",
-                })
+                })}
               }
             />
             <span className="min-w-fit pr-2 text-sm font-medium">
@@ -66,7 +67,8 @@ const TwishFooter: React.FC<Props> = ({ twish }) => {
               IconComponent={MessageCircle}
               tooltipText="Comment"
               hoverClassName="group-hover:text-blue-500"
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 setIsRetwishModalOpen(true);
                 setIsComment(true);
               }}
@@ -83,7 +85,10 @@ const TwishFooter: React.FC<Props> = ({ twish }) => {
                 "group-hover:text-green-500",
                 viewRetwishedByUsers?.includes(user?.id || "") && "text-green-500"
               )}
-              onClick={() => setIsRetwishModalOpen(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsRetwishModalOpen(true)
+              }}
             />
             <span className="min-w-fit pr-2 text-sm font-medium">
               {viewRetwishes}

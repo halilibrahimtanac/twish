@@ -17,7 +17,7 @@ interface TooltipIconButtonProps {
   /** Tailwind classes for the icon's hover and fill states, e.g., "group-hover:text-red-500". */
   hoverClassName?: string
   /** An optional click handler for the button. */
-  onClick?: () => void
+  onClick?: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void
   /** Optional additional classes to apply to the root element for layout purposes. */
   className?: string
   /** Optional props to pass directly to the underlying Button component. */
@@ -48,7 +48,7 @@ export const TooltipIconButton = React.forwardRef<
               variant="ghost"
               size="icon"
               className="group"
-              onClick={onClick}
+              onClick={(e) => onClick?.(e)}
               aria-label={tooltipText}
               {...buttonProps}
             >
