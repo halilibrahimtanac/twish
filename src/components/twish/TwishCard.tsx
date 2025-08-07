@@ -40,6 +40,7 @@ export interface TwishData {
   originalLikedByUserIds?: string[];
   originalRetwishes: number;
   originalRetwishedByUserIds?: string[];
+  originalComments: number;
 }
 
 interface TwishCardProps {

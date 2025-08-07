@@ -35,7 +35,8 @@ const TwishFooter: React.FC<Props> = ({ twish }) => {
   const viewRetwishes = twish.type === "retwish" ? twish.originalRetwishes : twish.retwishes;
   const viewLikedByUsers = twish.type === "retwish" ? twish.originalLikedByUserIds : twish.likedByUserIds;
   const viewRetwishedByUsers = twish.type === "retwish" ? twish.originalRetwishedByUserIds : twish.retwishedByUserIds;
-    
+  const viewComments = twish.type === "retwish" ? twish.originalComments : twish.comments;
+
   return (
     <>
       <CardFooter className="py-0 px-2">
@@ -74,7 +75,7 @@ const TwishFooter: React.FC<Props> = ({ twish }) => {
               }}
             />
             <span className="min-w-fit pr-2 text-sm font-medium">
-              {twish.comments}
+              {viewComments}
             </span>
 
             {/* Share Button */}

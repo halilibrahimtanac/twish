@@ -51,9 +51,12 @@ function twishDbQuery(){
 
   // 4. Aliases for joining the original twish and its author
   const originalTwish = alias(twishes, "original_twish");
+  const parentTwish = alias(twishes, "parent_twish");
   const originalAuthor = alias(users, "original_author");
+  const parentAuthor = alias(users, "parent_author");
   const mainProfilePictures = alias(pictures, "main_profile_pictures");
   const originalProfilePictures = alias(pictures, "original_profile_pictures");
+  const parentProfilePictures = alias(pictures, "parent_profile_pictures");
 
   return db
     .with(likeCounts, retwishCounts, replyCounts) // Include all CTEs
@@ -85,14 +88,27 @@ function twishDbQuery(){
       originalLikedByUserIds: sql<string[]>`(select liked_by_user_ids from like_counts lkc where lkc.twish_id = ${twishes.originalTwishId})`.mapWith((csv) => csv ? csv.split(',').filter(Boolean) : []),
       originalRetwishes: sql<number>`coalesce((select count from retwish_counts rtc where rtc.original_twish_id = ${twishes.originalTwishId}), 0)`.mapWith(Number),
       originalRetwishedByUserIds: sql<string[]>`(select retwished_by_user_ids from retwish_counts rtc where rtc.original_twish_id = ${twishes.originalTwishId})`.mapWith((csv) => csv ? csv.split(',').filter(Boolean) : []),
-
+      originalComments: sql<number>`coalesce((select count from reply_counts rpc where rpc.original_twish_id = ${twishes.originalTwishId}), 0)`.mapWith(Number),
+      parentTwishId: twishes.parentTwishId,
+      parentTwish: {
+        id: parentTwish.id,
+        content: parentTwish.content,
+        createdAt: parentTwish.createdAt,
+        authorId: parentAuthor.id,
+        authorName: parentAuthor.name,
+        authorUsername: parentAuthor.username,
+        authorAvatarUrl: parentProfilePictures.url,
+      }
     })
     .from(twishes)
     .innerJoin(users, eq(twishes.authorId, users.id))
     .leftJoin(originalTwish, eq(twishes.originalTwishId, originalTwish.id))
     .leftJoin(originalAuthor, eq(originalTwish.authorId, originalAuthor.id))
+    .leftJoin(parentTwish, eq(parentTwish.id, twishes.parentTwishId))
+    .leftJoin(parentAuthor, eq(parentAuthor.id, parentTwish.authorId))
     .leftJoin(mainProfilePictures, eq(mainProfilePictures.id, users.profilePictureId))
     .leftJoin(originalProfilePictures, eq(originalProfilePictures.id, originalAuthor.profilePictureId))
+    .leftJoin(parentProfilePictures, eq(parentProfilePictures.id, parentAuthor.profilePictureId))
     .orderBy(desc(twishes.createdAt));
 }
 
