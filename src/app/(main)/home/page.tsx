@@ -5,7 +5,7 @@ import React from 'react'
 
 const Home = () => {
   return (
-    <div className='w-full flex flex-col items-center box-border p-3'>
+    <div className='w-full flex flex-col items-center box-border sm:p-3'>
       <TwishCreator />
 
       <TwishList />

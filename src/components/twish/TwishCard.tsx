@@ -41,6 +41,15 @@ export interface TwishData {
   originalRetwishes: number;
   originalRetwishedByUserIds?: string[];
   originalComments: number;
+  parentTwish?: {
+    id: string | null;
+    content: string | null;
+    createdAt: string | null;
+    authorId: string | null;
+    authorName: string | null;
+    authorUsername: string | null;
+    authorAvatarUrl: string | null;
+  };
 }
 
 interface TwishCardProps {
@@ -68,7 +77,9 @@ export function TwishCard({ twish }: TwishCardProps) {
       
       <TwishHeader viewAuthorName={viewAuthorName} viewAuthorNameInitials={viewAuthorNameInitials} viewAuthorUserName={viewAuthorUserName} viewCreatedAt={viewCreatedAt} twish={twish}/>
 
-      <TwishContent content={viewContent} originalAuthorUsername={twish.type === "comment" ? twish.originalTwish?.authorUsername : ""}/>
+      <TwishContent content={viewContent} 
+      parentAuthorUsername={twish.type === "comment" ? twish.parentTwish?.authorUsername : ""} 
+      originalAuthorUsername={twish.type === "comment" ? twish.originalTwish?.authorUsername : ""}/>
 
       {twish.type === "quote" && <EmbeddedTwish embeddedTwish={{
         content: twish.originalTwish?.content || "",

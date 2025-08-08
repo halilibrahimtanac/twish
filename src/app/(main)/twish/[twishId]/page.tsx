@@ -2,7 +2,29 @@
 import { trpc } from "@/app/_trpc/client";
 import { TwishCard, TwishData } from "@/components/twish/TwishCard";
 import { useParams, useSearchParams } from "next/navigation";
-import React from "react";
+import React, { useMemo } from "react";
+
+export interface TwishDataWithChildren extends TwishData {
+  children: TwishDataWithChildren[];
+}
+
+
+const CommentThread = ({ comments, level = 0 }: { comments: TwishDataWithChildren[]; level?: number }) => {
+  
+  return (
+    <div>
+      {comments.map(comment => (
+        <React.Fragment key={comment.id}>
+          <TwishCard twish={comment} />
+          {comment.children && comment.children.length > 0 && (
+            <CommentThread comments={comment.children} level={level + 1} />
+          )}
+        </React.Fragment>
+      ))}
+    </div>
+  )
+}
+
 
 const Page = () => {
   const { twishId } = useParams();
@@ -10,7 +32,32 @@ const Page = () => {
   const type = searchParams.get('type');
   const twishIdParam = twishId?.toString() || ""
   const { data, isError, error, isFetching } = trpc.twish.getSingleTwish.useQuery({ twishId: twishIdParam });
-  const { data:comments, isError:isErrorComments, error:commentError, isFetching:isFetchingComment } = trpc.twish.getCommentsByTwishId.useQuery({ type: type || "", twishId: twishIdParam });
+  const { data: comments, isError: isErrorComments, error: commentError, isFetching: isFetchingComment } = trpc.twish.getCommentsByTwishId.useQuery({ type: type || "", twishId: twishIdParam });
+
+  const hierarchicalComments = useMemo(() => {
+    if (!comments) return [];
+    
+    const commentsMap: Map<string, TwishDataWithChildren> = new Map();
+    
+    comments.forEach(comment => {
+      commentsMap.set(comment.id, {
+        ...comment,
+        children: [] 
+      });
+    });
+
+    const rootComments: TwishDataWithChildren[] = [];
+
+    commentsMap.forEach(comment => {
+      if (comment.parentTwish?.id && commentsMap.has(comment.parentTwish.id)) {
+        commentsMap.get(comment.parentTwish.id)!.children.push(comment);
+      } else {
+        rootComments.push(comment);
+      }
+    });
+
+    return rootComments;
+  }, [comments]);
 
   if (isFetching) {
     return <div>Loading...</div>;
@@ -22,18 +69,16 @@ const Page = () => {
 
   if (data) {
     return (
-      <div className="sm:w-auto w-full flex flex-col mx-auto items-center box-border p-3">
+      <div className="sm:w-auto w-full flex flex-col mx-auto items-center box-border sm:p-3">
         <TwishCard twish={data} />
         {isFetchingComment && <div>Yorumlar yükleniyor...</div>}
         {isErrorComments && <div>Hata: {commentError?.message}</div>}
-        {comments && comments.length > 0 ? (
+        {hierarchicalComments && hierarchicalComments.length > 0 ? (
           <div className="w-full flex flex-col">
-            {comments.map((comment: TwishData) => (
-              <TwishCard key={comment.id} twish={comment}/>
-            ))}
+            <CommentThread comments={hierarchicalComments} />
           </div>
         ) : (
-          !isFetchingComment && <div>Henüz yorum yok.</div>
+          !isFetchingComment && <div className="mt-4">Henüz yorum yok. İlk yorumu sen yap!</div>
         )}
       </div>
     );

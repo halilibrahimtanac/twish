@@ -13,12 +13,16 @@ import Image from "next/image";
 export function Navbar() {
   return (
     <header className="px-4 sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
-
-        {/* Desktop Menu */}
-        <div className="mr-4 flex">
-          <Link href="/home" className="mr-6 flex items-center space-x-2">
-            <Image alt="twish-logo" src={"/twish-logo.png"} width={79} height={50}/>
+      <div className="container flex h-14 items-center relative justify-between md:justify-start">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:relative md:left-auto md:top-auto md:translate-x-0 md:translate-y-0 md:mr-4">
+          <Link href="/home" className="flex items-center space-x-2">
+            <Image 
+              alt="twish-logo" 
+              src={"/twish-logo.png"} 
+              width={79}
+              height={50} 
+              className="w-[60px] h-auto md:w-[79px]"
+            />
           </Link>
         </div>
 
