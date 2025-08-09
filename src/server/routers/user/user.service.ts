@@ -1,6 +1,6 @@
 import db from "@/db";
 import { pictures, users, type User } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { hashPassword, comparePassword } from "@/lib/password";
 import { createAndSetSession } from "@/lib/auth";
 import type { AddUserInput, LoginInput, SaveUserInputType } from "./user.input";
@@ -138,7 +138,7 @@ export async function getUserProfileInfos(id: string) {
     .from(users)
     .leftJoin(profilePics, eq(users.profilePictureId, profilePics.id))
     .leftJoin(backgroundPics, eq(users.backgroundPictureId, backgroundPics.id))
-    .where(eq(users.id, id))
+    .where(or(eq(users.id, id), eq(users.username, id)))
     .limit(1);
 
   return foundUser[0];

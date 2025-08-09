@@ -18,7 +18,8 @@ export function UserProfileCard({
   bio: initialBio,
   profilePictureUrl: initialProfilePictureUrl,
   backgroundPictureUrl: initialBackgroundPictureUrl,
-}: Partial<User>) {
+  canEdit = false
+}: Partial<User & { canEdit: boolean}>) {
   const { setUser } = useUserStore();
   const updateUserInfo = trpc.user.updateUserInfo.useMutation({
     onSuccess: (data) => {
@@ -235,9 +236,9 @@ export function UserProfileCard({
               </>
             ) : (
               <>
-                <Button onClick={() => setIsEditing(true)}>
+                {canEdit && <Button onClick={() => setIsEditing(true)}>
                   <Edit className="mr-2 h-4 w-4" /> Edit Profile
-                </Button>
+                </Button>}
               </>
             )}
           </div>

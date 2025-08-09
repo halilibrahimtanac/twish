@@ -23,7 +23,7 @@ const TwishHeader: React.FC<Props> = ({ viewAuthorName, viewAuthorNameInitials, 
         
          <HoverCard>
           <HoverCardTrigger asChild>
-            <a href={`/${viewAuthorName}`} className="flex-shrink-0">
+            <a href={`/user/${viewAuthorName}`} className="flex-shrink-0">
               <Avatar>
                 <AvatarImage src={avatarUrl || undefined} alt={twish.authorName} />
                 <AvatarFallback>
@@ -40,7 +40,7 @@ const TwishHeader: React.FC<Props> = ({ viewAuthorName, viewAuthorNameInitials, 
           <div className="flex items-center justify-between">
             <div>
               <a
-                href={`/${viewAuthorUserName}`}
+                href={`/user/${viewAuthorUserName}`}
                 className="font-semibold text-sm hover:underline"
               >
                 {viewAuthorName}

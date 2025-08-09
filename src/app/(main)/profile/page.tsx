@@ -20,6 +20,7 @@ const Profile: React.FC = () => {
     ...getUser.data,
     profilePictureUrl: getUser.data?.profilePictureUrl ?? undefined,
     backgroundPictureUrl: getUser.data?.backgroundPictureUrl ?? undefined,
+    canEdit: true
   };
 
   return (
