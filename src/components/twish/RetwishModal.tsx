@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,7 @@ import { TwishData } from "./TwishCard";
 import { trpc } from "@/app/_trpc/client";
 import { useUserStore } from "@/lib/store/user.store";
 import EmbeddedTwish from "./EmbeddedTwish";
-import { resultFunctions } from "@/lib/utils";
-import { TwishContext } from "./TwishList";
+import { createMutationOptions } from "@/lib/utils"; 
 
 interface RetwishModalProps {
   twish: TwishData;
@@ -19,19 +18,16 @@ interface RetwishModalProps {
 }
 
 export const RetwishModal: React.FC<RetwishModalProps> = ({ twish, isOpen, onOpenChange, isComment }) => {
-  const { userId } = useContext(TwishContext);
   const [quoteContent, setQuoteContent] = useState("");
   const { user } = useUserStore();
   const utils = trpc.useUtils();
 
   const reTwish = trpc.twish.reTwish.useMutation(
-    resultFunctions(
+    createMutationOptions({
       utils,
-      twish.id,
-      () => onOpenChange(false), // Close modal on success
-      "Failed to post.",
-      userId
-    )
+      onSuccessCallback: () => onOpenChange(false),
+      errorMessage: "Failed to post.",
+    })
   );
 
   const handleRetwish = () => {
@@ -91,66 +87,57 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({ twish, isOpen, onOpe
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
-        <DialogHeader>
-          <DialogTitle>Amplify this Twish</DialogTitle>
-        </DialogHeader>
+        <DialogContent className="sm:max-w-[525px]">
+            <DialogHeader>
+                <DialogTitle>Amplify this Twish</DialogTitle>
+            </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-4" onClick={(e) => e.stopPropagation()}>
-          {isComment ? (
-            <>
-              {embeddedContent}
-              {commentInputArea}
-            </>
-          ) : (
-            <>
-              {commentInputArea}
-              {embeddedContent}
-            </>
-          )}
-        </div>
+            <div className="flex flex-col gap-4 py-4" onClick={(e) => e.stopPropagation()}>
+                {isComment ? ( <> {embeddedContent} {commentInputArea} </> ) : 
+                             ( <> {commentInputArea} {embeddedContent} </> )
+                }
+            </div>
 
-        {/* Modal Footer Buttons */}
-        <DialogFooter className="gap-2 sm:justify-between" onClick={(e) => e.stopPropagation()}>
-          <DialogClose asChild>
-            <Button type="button" variant="outline" className="w-full sm:w-auto">
-              Cancel
-            </Button>
-          </DialogClose>
-          <div className="flex flex-col-reverse gap-2 sm:flex-row">
-            {!isComment && (
-              <>
-                <Button
-                  variant="secondary"
-                  className="w-full sm:w-auto"
-                  onClick={handleRetwish}
-                  disabled={reTwish.isPending}
-                >
-                  Retwish
+            <DialogFooter className="gap-2 sm:justify-between" onClick={(e) => e.stopPropagation()}>
+            <DialogClose asChild>
+                <Button type="button" variant="outline" className="w-full sm:w-auto">
+                Cancel
                 </Button>
+            </DialogClose>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row">
+                {!isComment && (
+                <>
+                    <Button
+                    variant="secondary"
+                    className="w-full sm:w-auto"
+                    onClick={handleRetwish}
+                    disabled={reTwish.isPending}
+                    >
+                    Retwish
+                    </Button>
+                    <Button
+                    type="submit"
+                    className="w-full sm:w-auto"
+                    onClick={() => handleQuoteOrCommentTwish("quote")}
+                    disabled={!quoteContent.trim() || reTwish.isPending}
+                    >
+                    Quote
+                    </Button>
+                </>
+                )}
+                {isComment && (
                 <Button
-                  type="submit"
-                  className="w-full sm:w-auto"
-                  onClick={() => handleQuoteOrCommentTwish("quote")}
-                  disabled={!quoteContent.trim() || reTwish.isPending}
+                    type="submit"
+                    className="w-full sm:w-auto"
+                    onClick={() => handleQuoteOrCommentTwish("comment")}
+                    disabled={!quoteContent.trim() || reTwish.isPending}
                 >
-                  Quote
+                    Comment
                 </Button>
-              </>
-            )}
-            {isComment && (
-              <Button
-                type="submit"
-                className="w-full sm:w-auto"
-                onClick={() => handleQuoteOrCommentTwish("comment")}
-                disabled={!quoteContent.trim() || reTwish.isPending}
-              >
-                Comment
-              </Button>
-            )}
-          </div>
-        </DialogFooter>
-      </DialogContent>
+                )}
+            </div>
+            </DialogFooter>
+        </DialogContent>
     </Dialog>
   );
 };

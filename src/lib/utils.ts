@@ -27,29 +27,28 @@ export const dateStringConverter = (dateString: string): string => {
 
 export const initials = (str: string | undefined): string => str ? str.trim().split(" ").map((n) => n[0].toUpperCase()).join("") : "";
 
+interface MutationOptionsConfig {
+  utils: ReturnType<typeof trpc.useUtils>;
+  onSuccessCallback?: () => void;
+  errorMessage?: string;
+}
 
-export const resultFunctions = (
-  utils: ReturnType<typeof trpc.useUtils>,
-  twishId: string,
-  onSuccessCallback?: () => void,
-  errorMessage: string = "",
-  userIdParam?: string
-) => ({
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onSuccess: async (data: any) => {
-    if(data && data.type !== "comment"){
-      utils.twish.getAllTwishes.setData({ userId: userIdParam }, (old) => [data, ...(old ?? [])])
-    }else {
-      const updatedTwish = await utils.twish.getSingleTwish.fetch({ twishId });
-      utils.twish.getAllTwishes.setData({ userId: userIdParam }, (old) => old?.map(t => t.id === updatedTwish.id ? updatedTwish : t));
-    }
+export const createMutationOptions = ({
+  utils,
+  onSuccessCallback,
+  errorMessage,
+}: MutationOptionsConfig) => ({
+  onSuccess: () => {
+    utils.twish.invalidate();
+
     onSuccessCallback?.();
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onError: (error: any) => {
-    toast("Error", {
+    toast.error("Error", {
       description: error.message || errorMessage || "Something went wrong. Please try again.",
       closeButton: true,
+      duration: 3000,
     });
   },
 });

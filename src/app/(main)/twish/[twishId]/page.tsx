@@ -31,8 +31,8 @@ const Page = () => {
   const searchParams = useSearchParams();
   const type = searchParams.get('type');
   const twishIdParam = twishId?.toString() || ""
-  const { data, isError, error, isFetching } = trpc.twish.getSingleTwish.useQuery({ twishId: twishIdParam });
-  const { data: comments, isError: isErrorComments, error: commentError, isFetching: isFetchingComment } = trpc.twish.getCommentsByTwishId.useQuery({ type: type || "", twishId: twishIdParam });
+  const { data, isError, error, isLoading } = trpc.twish.getSingleTwish.useQuery({ twishId: twishIdParam });
+  const { data: comments, isError: isErrorComments, error: commentError, isLoading: isLoadingComments } = trpc.twish.getCommentsByTwishId.useQuery({ type: type || "", twishId: twishIdParam });
 
   const hierarchicalComments = useMemo(() => {
     if (!comments) return [];
@@ -59,7 +59,7 @@ const Page = () => {
     return rootComments;
   }, [comments]);
 
-  if (isFetching) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 
@@ -71,14 +71,14 @@ const Page = () => {
     return (
       <div className="sm:w-auto w-full flex flex-col mx-auto items-center box-border sm:p-3">
         <TwishCard twish={data} />
-        {isFetchingComment && <div>Yorumlar yükleniyor...</div>}
+        {isLoadingComments && <div>Yorumlar yükleniyor...</div>}
         {isErrorComments && <div>Hata: {commentError?.message}</div>}
         {hierarchicalComments && hierarchicalComments.length > 0 ? (
           <div className="w-full flex flex-col">
             <CommentThread comments={hierarchicalComments} />
           </div>
         ) : (
-          !isFetchingComment && <div className="mt-4">Henüz yorum yok. İlk yorumu sen yap!</div>
+          !isLoadingComments && <div className="mt-4">Henüz yorum yok. İlk yorumu sen yap!</div>
         )}
       </div>
     );
