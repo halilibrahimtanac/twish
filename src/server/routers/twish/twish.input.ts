@@ -21,7 +21,9 @@ export const reTwishInput = z.object({
     originalTwishId: z.string().min(1),
     userId: z.string().min(1),
     parentTwishId: z.string().optional(),
-    type: z.string().default("original")
+    type: z.string().default("original"),
+    hasMedia: z.boolean(),
+    mediaCount: z.number()
 });
 
 export const updateTwishMediaPreviewInput = z.object({
