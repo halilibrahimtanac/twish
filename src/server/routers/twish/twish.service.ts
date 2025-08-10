@@ -1,5 +1,5 @@
 import db from "@/db";
-import { GetCommentsByTwishIdInput, LikeTwishInput, ReTwishInput, TwishInputType } from "./twish.input";
+import { GetCommentsByTwishIdInput, LikeTwishInput, ReTwishInput, TwishInputType, UpdateTwishMediaPreviewInput } from "./twish.input";
 import { likes, pictures, twishes, users } from "@/db/schema";
 import { and, desc, eq, isNotNull, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
@@ -127,20 +127,22 @@ export async function getFeedTwishes(userId?: string) {
 }
 
 export const newTwishService = async (input: TwishInputType) => {
-  const { content, username } = input;
+  const { content, username, hasMedia, mediaCount } = input;
   const foundUser = await db
     .select({ id: users.id })
     .from(users)
     .where(eq(users.username, username));
   if (foundUser[0]) {
-    return await db
+    return (await db
       .insert(twishes)
       .values({
         id: crypto.randomUUID(),
         content,
         authorId: foundUser[0].id,
+        hasMedia,
+        mediaCount
       })
-      .returning();
+      .returning())[0];
   }
   throw new Error("User not found");
 };
@@ -222,6 +224,14 @@ export const reTwishService = async (input: ReTwishInput) => {
 
   return (await fullNewTwish)[0];
 };
+
+export const updateTwishMediaPreviewService = async (input: UpdateTwishMediaPreviewInput) => {
+  const { id, mediaPreview } = input;
+
+  await db.update(twishes).set({ mediaPreview }).where(eq(twishes.id, id));
+
+  return true;
+}
 
 export const getSingleTwish = async (twishId: string) => {
   const twishQuery = twishDbQuery();

@@ -30,6 +30,10 @@ export const twishes = sqliteTable("twishes", {
   originalTwishId: text("original_twish_id"), 
   type: text("type").notNull().default("original"),
   parentTwishId: text("parent_twish_id"),
+  hasMedia: integer("has_media", { mode: "boolean" }).notNull().default(false),
+  mediaCount: integer("media_count").notNull().default(0),
+  firstMediaUrl: text("first_media_url"),
+  mediaPreview: text("media_preview"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
 }, (self) => ([
