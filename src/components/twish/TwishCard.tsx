@@ -11,6 +11,17 @@ import TwishContent from "./TwishCardParts/TwishContent";
 import TwishFooter from "./TwishCardParts/TwishFooter";
 import EmbeddedTwish from "./EmbeddedTwish";
 import { useRouter } from "next/navigation";
+import MediaPreview from "./TwishCardParts/MediaPreview";
+
+export interface MediaPreviewItem {
+  id: string;
+  type: string;
+  originalName: string;
+  fileName: string;
+  url: string;
+  size: number;
+  mimeType: string;
+}
 
 export interface TwishData {
   id: string;
@@ -50,6 +61,7 @@ export interface TwishData {
     authorUsername: string | null;
     authorAvatarUrl: string | null;
   };
+  mediaPreview?: MediaPreviewItem[] | null; // Updated type
 }
 
 interface TwishCardProps {
@@ -80,6 +92,12 @@ export function TwishCard({ twish }: TwishCardProps) {
       <TwishContent content={viewContent} 
       parentAuthorUsername={twish.type === "comment" ? twish.parentTwish?.authorUsername : ""} 
       originalAuthorUsername={twish.type === "comment" ? twish.originalTwish?.authorUsername : ""}/>
+
+      {twish.mediaPreview && (
+        <div className="px-4">
+          <MediaPreview mediaItems={twish.mediaPreview} />
+        </div>
+      )}
 
       {twish.type === "quote" && <EmbeddedTwish embeddedTwish={{
         content: twish.originalTwish?.content || "",

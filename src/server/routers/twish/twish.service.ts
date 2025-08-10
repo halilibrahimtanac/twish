@@ -98,7 +98,8 @@ function twishDbQuery(){
         authorName: parentAuthor.name,
         authorUsername: parentAuthor.username,
         authorAvatarUrl: parentProfilePictures.url,
-      }
+      },
+      mediaPreview: twishes.mediaPreview
     })
     .from(twishes)
     .innerJoin(users, eq(twishes.authorId, users.id))
@@ -123,7 +124,10 @@ export async function getFeedTwishes(userId?: string) {
 
     feedTwishes.where(and(...conditions));
 
-  return await feedTwishes.limit(20);
+  return (await feedTwishes.limit(20)).map(tw => ({
+    ...tw,
+    mediaPreview: tw.mediaPreview ? JSON.parse(tw.mediaPreview) : null
+  }));
 }
 
 export const newTwishService = async (input: TwishInputType) => {
@@ -237,8 +241,9 @@ export const getSingleTwish = async (twishId: string) => {
   const twishQuery = twishDbQuery();
 
   twishQuery.where(eq(twishes.id, twishId)).limit(1);
+  const [result] = (await twishQuery);
 
-  return (await twishQuery)[0];
+  return { ...result, mediaPreview: result.mediaPreview ? JSON.parse(result.mediaPreview) : null};
 };
 
 export const getCommentsByTwishId = async ({ type, twishId }: GetCommentsByTwishIdInput) => {
@@ -248,5 +253,8 @@ export const getCommentsByTwishId = async ({ type, twishId }: GetCommentsByTwish
 
   const result = await twishQuery.where(and(equalQuery, eq(twishes.type, 'comment')));
 
-  return result;
+  return result.map(cm => ({
+    ...cm,
+    mediaPreview: cm.mediaPreview ? JSON.parse(cm.mediaPreview) : null
+  }));
 }

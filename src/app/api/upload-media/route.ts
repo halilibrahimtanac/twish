@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
         type: fileType,
         originalName: fileName,
         fileName: uniqueFileName,
-        url: `/uploads/${twishId}/${uniqueFileName}`,
+        url: `/uploads/twishes/${twishId}/${uniqueFileName}`,
         size: file.size,
         mimeType: file.type,
       });
