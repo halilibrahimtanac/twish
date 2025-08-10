@@ -10,6 +10,7 @@ import { SaveUserInputType } from "@/server/routers/user/user.input";
 import { MapPin, Link as LinkIcon, Edit, Camera } from "lucide-react";
 import { useState, useRef, ChangeEvent } from "react";
 import TwishList from "./twish/TwishList";
+import { ImageCropModal } from "./ImageCropModal";
 
 export function UserProfileCard({
   id,
@@ -18,32 +19,37 @@ export function UserProfileCard({
   bio: initialBio,
   profilePictureUrl: initialProfilePictureUrl,
   backgroundPictureUrl: initialBackgroundPictureUrl,
-  canEdit = false
-}: Partial<User & { canEdit: boolean}>) {
+  canEdit = false,
+}: Partial<User & { canEdit: boolean }>) {
   const { setUser } = useUserStore();
   const updateUserInfo = trpc.user.updateUserInfo.useMutation({
     onSuccess: (data) => {
       console.log("saved: ", data);
     },
   });
+  
   const [isEditing, setIsEditing] = useState(false);
-
   const [name, setName] = useState(initialName || "");
   const [bio, setBio] = useState(initialBio || "");
-
+  
   const [profilePictureUrl, setProfilePictureUrl] = useState<
     string | undefined
   >(initialProfilePictureUrl || undefined);
   const [backgroundPictureUrl, setBackgroundPictureUrl] = useState<
     string | undefined
   >(initialBackgroundPictureUrl || undefined);
-
+  
   const [profilePictureFile, setProfilePictureFile] = useState<
     File | undefined
   >();
   const [backgroundPictureFile, setBackgroundPictureFile] = useState<
     File | undefined
   >();
+
+  // Modal states
+  const [showProfileCropModal, setShowProfileCropModal] = useState(false);
+  const [tempProfileImageSrc, setTempProfileImageSrc] = useState<string>("");
+  const [tempProfileFileName, setTempProfileFileName] = useState<string>("");
 
   const profilePictureInputRef = useRef<HTMLInputElement>(null);
   const backgroundPictureInputRef = useRef<HTMLInputElement>(null);
@@ -120,16 +126,26 @@ export function UserProfileCard({
     setIsEditing(false);
   };
 
-  const handleFileChange = (
-    e: ChangeEvent<HTMLInputElement>,
-    setter: React.Dispatch<React.SetStateAction<string | undefined>>,
-    fileSetter: React.Dispatch<React.SetStateAction<File | undefined>>
-  ) => {
+  const handleBackgroundFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setter(URL.createObjectURL(file));
-      fileSetter(file);
+      setBackgroundPictureUrl(URL.createObjectURL(file));
+      setBackgroundPictureFile(file);
     }
+  };
+
+  const handleProfileFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setTempProfileImageSrc(URL.createObjectURL(file));
+      setTempProfileFileName(file.name);
+      setShowProfileCropModal(true);
+    }
+  };
+
+  const handleProfileCropComplete = (croppedImageFile: File) => {
+    setProfilePictureFile(croppedImageFile);
+    setProfilePictureUrl(URL.createObjectURL(croppedImageFile));
   };
 
   return (
@@ -139,22 +155,14 @@ export function UserProfileCard({
         <input
           type="file"
           ref={profilePictureInputRef}
-          onChange={(e) =>
-            handleFileChange(e, setProfilePictureUrl, setProfilePictureFile)
-          }
+          onChange={handleProfileFileChange}
           className="hidden"
           accept="image/*"
         />
         <input
           type="file"
           ref={backgroundPictureInputRef}
-          onChange={(e) =>
-            handleFileChange(
-              e,
-              setBackgroundPictureUrl,
-              setBackgroundPictureFile
-            )
-          }
+          onChange={handleBackgroundFileChange}
           className="hidden"
           accept="image/*"
         />
@@ -236,9 +244,11 @@ export function UserProfileCard({
               </>
             ) : (
               <>
-                {canEdit && <Button onClick={() => setIsEditing(true)}>
-                  <Edit className="mr-2 h-4 w-4" /> Edit Profile
-                </Button>}
+                {canEdit && (
+                  <Button onClick={() => setIsEditing(true)}>
+                    <Edit className="mr-2 h-4 w-4" /> Edit Profile
+                  </Button>
+                )}
               </>
             )}
           </div>
@@ -291,6 +301,15 @@ export function UserProfileCard({
       </Card>
 
       <TwishList userIdParam={id} />
+
+      {/* Profile Picture Crop Modal */}
+      <ImageCropModal
+        isOpen={showProfileCropModal}
+        onClose={() => setShowProfileCropModal(false)}
+        imageSrc={tempProfileImageSrc}
+        onCropComplete={handleProfileCropComplete}
+        fileName={tempProfileFileName}
+      />
     </div>
   );
 }
