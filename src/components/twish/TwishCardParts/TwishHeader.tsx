@@ -8,6 +8,7 @@ import { MoreHorizontal } from 'lucide-react'
 import React from 'react'
 import { TwishData } from '../TwishCard'
 import { useUserStore } from '@/lib/store/user.store'
+import Link from 'next/link'
 
 interface Props {
     viewAuthorName: string;
@@ -26,28 +27,27 @@ const TwishHeader: React.FC<Props> = ({ viewAuthorName, viewAuthorNameInitials, 
         
          <HoverCard>
           <HoverCardTrigger asChild>
-            <a href={userRoute} className="flex-shrink-0">
+            <Link href={userRoute} className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
               <Avatar>
                 <AvatarImage src={avatarUrl || undefined} alt={twish.authorName} />
                 <AvatarFallback>
                   {viewAuthorNameInitials}
                 </AvatarFallback>
               </Avatar>
-            </a>
+            </Link>
           </HoverCardTrigger>
-        </HoverCard> 
-      
-        
+        </HoverCard>  
 
         <div className="flex-grow">
           <div className="flex items-center justify-between">
             <div>
-              <a
+              <Link
                 href={userRoute}
                 className="font-semibold text-sm hover:underline"
+                onClick={(e) => e.stopPropagation()}
               >
                 {viewAuthorName}
-              </a>
+              </Link>
               <p className="text-xs text-muted-foreground">
                 @{viewAuthorUserName}
               </p>

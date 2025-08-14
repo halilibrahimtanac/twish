@@ -5,8 +5,8 @@ import { PhoneOff } from 'lucide-react';
 import { useWebRTC } from '../WebRTCContext';
 import { Button } from '../ui/button';
 
-export const VideoCallModal = ({ targetUserId }: { targetUserId: string }) => {
-  const { localStream, remoteStream, endCall } = useWebRTC();
+export const VideoCallModal = () => {
+  const { localStream, remoteStream, endCall, answeredCallUserId } = useWebRTC();
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -47,7 +47,7 @@ export const VideoCallModal = ({ targetUserId }: { targetUserId: string }) => {
         </div>
       </div>
       <div className="mt-4">
-         <Button variant="destructive" size="lg" onClick={() => endCall(targetUserId)}>
+         <Button variant="destructive" size="lg" onClick={() => endCall(answeredCallUserId || "")}>
             <PhoneOff className="mr-2 h-5 w-5"/> End Call
          </Button>
       </div>

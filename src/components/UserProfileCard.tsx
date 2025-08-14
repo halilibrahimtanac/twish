@@ -20,8 +20,6 @@ import TwishList from "./twish/TwishList";
 import { ImageCropModal } from "./ImageCropModal";
 import { useWebRTC } from "./WebRTCContext";
 import { useSocket } from "./SocketContext";
-import { IncomingCallNotification } from "./VideoCall/IncomingCallNotification";
-import { VideoCallModal } from "./VideoCall/VideoCallModal";
 
 export function UserProfileCard({
   id,
@@ -66,7 +64,7 @@ export function UserProfileCard({
   const backgroundPictureInputRef = useRef<HTMLInputElement>(null);
   const [isOnline, setIsOnline] = useState(false);
   const { socket } = useSocket();
-  const { startCall, isCallActive, incomingCall, isCalling } = useWebRTC();
+  const { startCall, isCallActive, isCalling } = useWebRTC();
 
   useEffect(() => {
     if (socket && id) {
@@ -366,9 +364,6 @@ export function UserProfileCard({
         onCropComplete={handleProfileCropComplete}
         fileName={tempProfileFileName}
       />
-
-      {incomingCall && !isCallActive && <IncomingCallNotification />}
-      {isCallActive && id && <VideoCallModal targetUserId={id} />}
     </div>
   );
 }

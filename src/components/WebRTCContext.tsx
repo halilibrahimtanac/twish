@@ -22,6 +22,7 @@ interface IWebRTCContext {
     profilePictureUrl: string | null;
     backgroundPictureUrl: string | null;
 } } | null;
+  answeredCallUserId: string | null;
   startCall: (targetUserId: string) => void;
   answerCall: () => void;
   rejectCall: () => void;
@@ -48,6 +49,7 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
   const [isCallActive, setIsCallActive] = useState(false);
   const [isGettingMedia, setIsGettingMedia] = useState(false);
   const [isCalling, setIsCalling] = useState(false);
+  const [answeredCallUserId, setAnsweredCallUserId] = useState<string | null>(null);
   const peerRef = useRef<Peer.Instance | null>(null);
 
   const utils = trpc.useUtils();
@@ -98,6 +100,7 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
     setRemoteStream(null);
     setIsCallActive(false);
     setIncomingCall(null);
+    setAnsweredCallUserId(null);
   };
   
   const startCall = async (targetUserId: string) => {
@@ -170,6 +173,7 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
       
       peer.signal(incomingCall.signal);
 
+      setAnsweredCallUserId(incomingCall.from);
       setIncomingCall(null);
       
       peer.on('close', cleanUp);
@@ -220,6 +224,7 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
     isGettingMedia,
     isCalling,
     incomingCall,
+    answeredCallUserId,
     startCall,
     answerCall,
     rejectCall,

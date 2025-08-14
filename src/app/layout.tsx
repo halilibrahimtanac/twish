@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TRPCProvider } from "./_trpc/Provider";
 import { Toaster } from "sonner";
+import { SocketProvider } from "@/components/SocketContext";
+import { WebRTCProvider } from "@/components/WebRTCContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,8 +31,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-       <TRPCProvider>{children}</TRPCProvider>
-       <Toaster />
+        <TRPCProvider>
+          <SocketProvider>
+            <WebRTCProvider>{children}</WebRTCProvider>
+          </SocketProvider>
+        </TRPCProvider>
+        <Toaster />
       </body>
     </html>
   );
