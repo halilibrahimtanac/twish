@@ -6,7 +6,7 @@ import React from "react";
 
 const UserPage: React.FC = () => {
   const { username } = useParams();
-  const getUser = trpc.user.getUserProfileInfos.useQuery({ id: username?.toString() || "" });
+  const getUser = trpc.user.getUserProfileInfos.useQuery({ id: username?.toString() || "" }, { enabled: !!username });
 
   if (getUser.isLoading) {
     return <div>Loading...</div>;

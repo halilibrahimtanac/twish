@@ -7,6 +7,7 @@ import { dateStringConverter } from '@/lib/utils'
 import { MoreHorizontal } from 'lucide-react'
 import React from 'react'
 import { TwishData } from '../TwishCard'
+import { useUserStore } from '@/lib/store/user.store'
 
 interface Props {
     viewAuthorName: string;
@@ -17,13 +18,15 @@ interface Props {
 }
 
 const TwishHeader: React.FC<Props> = ({ viewAuthorName, viewAuthorNameInitials, viewAuthorUserName, viewCreatedAt, twish }) => {
+  const { user } = useUserStore();
   const avatarUrl = twish.type === "retwish" ? twish.originalTwish?.authorAvatarUrl : twish.authorAvatarUrl;
+  const userRoute = user?.username === viewAuthorUserName ? "/profile" : `/user/${viewAuthorUserName}`;
   return (
     <CardHeader className="flex flex-row items-center gap-2 space-y-0 px-3">
         
          <HoverCard>
           <HoverCardTrigger asChild>
-            <a href={`/user/${viewAuthorName}`} className="flex-shrink-0">
+            <a href={userRoute} className="flex-shrink-0">
               <Avatar>
                 <AvatarImage src={avatarUrl || undefined} alt={twish.authorName} />
                 <AvatarFallback>
@@ -40,7 +43,7 @@ const TwishHeader: React.FC<Props> = ({ viewAuthorName, viewAuthorNameInitials, 
           <div className="flex items-center justify-between">
             <div>
               <a
-                href={`/user/${viewAuthorUserName}`}
+                href={userRoute}
                 className="font-semibold text-sm hover:underline"
               >
                 {viewAuthorName}

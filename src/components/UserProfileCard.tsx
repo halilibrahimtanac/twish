@@ -7,10 +7,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { User, useUserStore } from "@/lib/store/user.store";
 import { cn, initials } from "@/lib/utils";
 import { SaveUserInputType } from "@/server/routers/user/user.input";
-import { MapPin, Link as LinkIcon, Edit, Camera } from "lucide-react";
-import { useState, useRef, ChangeEvent } from "react";
+import {
+  MapPin,
+  Link as LinkIcon,
+  Edit,
+  Camera,
+  MessageCircle,
+  Video,
+} from "lucide-react";
+import { useState, useRef, ChangeEvent, useEffect } from "react";
 import TwishList from "./twish/TwishList";
 import { ImageCropModal } from "./ImageCropModal";
+import { useWebRTC } from "./WebRTCContext";
+import { useSocket } from "./SocketContext";
+import { IncomingCallNotification } from "./VideoCall/IncomingCallNotification";
+import { VideoCallModal } from "./VideoCall/VideoCallModal";
 
 export function UserProfileCard({
   id,
@@ -27,18 +38,18 @@ export function UserProfileCard({
       console.log("saved: ", data);
     },
   });
-  
+
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(initialName || "");
   const [bio, setBio] = useState(initialBio || "");
-  
+
   const [profilePictureUrl, setProfilePictureUrl] = useState<
     string | undefined
   >(initialProfilePictureUrl || undefined);
   const [backgroundPictureUrl, setBackgroundPictureUrl] = useState<
     string | undefined
   >(initialBackgroundPictureUrl || undefined);
-  
+
   const [profilePictureFile, setProfilePictureFile] = useState<
     File | undefined
   >();
@@ -53,6 +64,37 @@ export function UserProfileCard({
 
   const profilePictureInputRef = useRef<HTMLInputElement>(null);
   const backgroundPictureInputRef = useRef<HTMLInputElement>(null);
+  const [isOnline, setIsOnline] = useState(false);
+  const { socket } = useSocket();
+  const { startCall, isCallActive, incomingCall, isCalling } = useWebRTC();
+
+  useEffect(() => {
+    if (socket && id) {
+      socket.emit(
+        "check-user-online",
+        id,
+        (response: { isOnline: boolean }) => {
+          setIsOnline(response.isOnline);
+        }
+      );
+
+      const handleOnlineStatusUpdate = (onlineUsers: string[]) => {
+        setIsOnline(onlineUsers.includes(id));
+      };
+
+      socket.on("online-users-updated", handleOnlineStatusUpdate);
+
+      return () => {
+        socket.off("online-users-updated", handleOnlineStatusUpdate);
+      };
+    }
+  }, [socket, id]);
+
+  const handleStartCall = () => {
+    if (id) {
+      startCall(id);
+    }
+  };
 
   const uploadFile = async (file: File, userId: string) => {
     const formData = new FormData();
@@ -244,10 +286,24 @@ export function UserProfileCard({
               </>
             ) : (
               <>
-                {canEdit && (
+                {canEdit ? (
                   <Button onClick={() => setIsEditing(true)}>
                     <Edit className="mr-2 h-4 w-4" /> Edit Profile
                   </Button>
+                ) : (
+                  <>
+                    <Button variant="outline">
+                      <MessageCircle className="mr-2 h-4 w-4" /> Message
+                    </Button>
+                    <Button
+                      onClick={handleStartCall}
+                      disabled={!isOnline || isCallActive || isCalling}
+                      className="w-32 justify-center"
+                    >
+                      <Video className="mr-2 h-4 w-4" />
+                      {(isOnline && !isCalling) ? "Video Call" : (isOnline && isCalling) ? "Calling..." : "Offline"}
+                    </Button>
+                  </>
                 )}
               </>
             )}
@@ -310,6 +366,9 @@ export function UserProfileCard({
         onCropComplete={handleProfileCropComplete}
         fileName={tempProfileFileName}
       />
+
+      {incomingCall && !isCallActive && <IncomingCallNotification />}
+      {isCallActive && id && <VideoCallModal targetUserId={id} />}
     </div>
   );
 }

@@ -10,7 +10,7 @@
 !.yarn/releases
 !.yarn/versions
 /public/uploads
-
+/signal-server
 # testing
 /coverage
 

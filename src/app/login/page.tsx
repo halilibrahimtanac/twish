@@ -21,16 +21,14 @@ export default function LoginPage() {
   const router = useRouter();
   const { setUserObject } = useUserStore();
 
-  // 3. Configure useForm with the zodResolver
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     setError,
   } = useForm<LoginInput>({
-    resolver: zodResolver(loginInput), // This connects Zod to React Hook Form
+    resolver: zodResolver(loginInput),
     defaultValues: {
-      // Good practice to set default values
       email: "",
       password: "",
     },
@@ -59,7 +57,6 @@ export default function LoginPage() {
           message: parsedError[0][1],
         });
       } else {
-        // fallback: set a generic error on email (or a form-level error if you have one)
         setError("email", {
           type: "validate",
           message: error.message || "An unknown error occurred.",
