@@ -65,9 +65,7 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit: SubmitHandler<LoginInput> = async (
-    formData
-  ) => {
+  const onSubmit: SubmitHandler<LoginInput> = async (formData) => {
     try {
       await login.mutateAsync(formData);
     } catch (error) {
@@ -93,6 +91,7 @@ export default function LoginPage() {
               placeholder="m@example.com"
               register={register}
               errors={errors}
+              autoComplete="username"
             />
 
             <FormInput<LoginInput>
@@ -102,6 +101,7 @@ export default function LoginPage() {
               placeholder="**********"
               register={register}
               errors={errors}
+              autoComplete="current-password"
             />
 
             <Button

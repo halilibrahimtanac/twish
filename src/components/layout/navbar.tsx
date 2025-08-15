@@ -18,7 +18,7 @@ export function Navbar() {
           <Link href="/home" className="flex items-center space-x-2">
             <Image 
               alt="twish-logo" 
-              src={"/twish-logo.png"} 
+              src={"/twish-logo-preview.png"} 
               width={79}
               height={50} 
               className="w-[60px] h-auto md:w-[79px]"

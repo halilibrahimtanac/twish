@@ -268,9 +268,9 @@ export function UserProfileCard({
                   />
                 </div>
               ) : (
-                <h1 className="text-2xl font-bold">{name}</h1>
+                <h1 className="text-lg font-bold">{name}</h1>
               )}
-              <p className={cn("text-muted-foreground", isEditing && "mt-2")}>
+              <p className={cn("text-sm text-muted-foreground", isEditing && "mt-2")}>
                 @{username}
               </p>
             </div>
@@ -289,19 +289,59 @@ export function UserProfileCard({
                     <Edit className="mr-2 h-4 w-4" /> Edit Profile
                   </Button>
                 ) : (
-                  <>
+                  <span className="flex justify-end gap-2">
                     <Button variant="outline">
-                      <MessageCircle className="mr-2 h-4 w-4" /> Message
+                      <MessageCircle className="h-4 w-4" />
                     </Button>
                     <Button
                       onClick={handleStartCall}
                       disabled={!isOnline || isCallActive || isCalling}
-                      className="w-32 justify-center"
+                      className="justify-center"
                     >
-                      <Video className="mr-2 h-4 w-4" />
-                      {(isOnline && !isCalling) ? "Video Call" : (isOnline && isCalling) ? "Calling..." : "Offline"}
+                      <Video className="h-4 w-4" />
+                      {(isOnline && isCalling) ? (
+                        <span className="inline-flex items-center">
+                          <span className="dot-typing"></span>
+                        </span>
+                      ) : ""}
                     </Button>
-                  </>
+                    <style jsx>{`
+                      .dot-typing {
+                        position: relative;
+                        width: 24px;
+                        height: 10px;
+                        display: inline-block;
+                      }
+                      .dot-typing::before, .dot-typing::after, .dot-typing span {
+                        content: '';
+                        display: inline-block;
+                        width: 6px;
+                        height: 6px;
+                        border-radius: 50%;
+                        background: currentColor;
+                        position: absolute;
+                        top: 0;
+                        animation: dotTyping 1s infinite linear;
+                      }
+                      .dot-typing::before {
+                        left: 0;
+                        animation-delay: 0s;
+                      }
+                      .dot-typing span {
+                        left: 8px;
+                        animation-delay: 0.2s;
+                      }
+                      .dot-typing::after {
+                        left: 16px;
+                        animation-delay: 0.4s;
+                      }
+                      @keyframes dotTyping {
+                        0% { opacity: 0.2; }
+                        20% { opacity: 1; }
+                        100% { opacity: 0.2; }
+                      }
+                    `}</style>
+                  </span>
                 )}
               </>
             )}
