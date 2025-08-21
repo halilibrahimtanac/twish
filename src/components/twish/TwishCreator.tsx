@@ -10,6 +10,7 @@ import { trpc } from "@/app/_trpc/client";
 import { AvatarImage } from "@radix-ui/react-avatar";
 import { Textarea } from "../ui/textarea";
 import { Image, Video, X, Play } from "lucide-react";
+import { useSocket } from "../SocketContext";
 
 interface MediaFile {
   file: File;
@@ -19,6 +20,7 @@ interface MediaFile {
 
 export function TwishCreator() {
   const { user } = useUserStore();
+  const { socket } = useSocket();
   const [content, setContent] = useState("");
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [playingVideos, setPlayingVideos] = useState<Set<number>>(new Set());
@@ -184,7 +186,6 @@ export function TwishCreator() {
       // If there are media files, upload them
       if (mediaFiles.length > 0 && newTwish.id) {
         const uploadedFiles = await uploadMediaFiles(newTwish.id, mediaFiles);
-
         await twishUpdate({
           id: newTwish.id,
           mediaPreview: JSON.stringify(uploadedFiles)
@@ -192,6 +193,7 @@ export function TwishCreator() {
       }
 
       // Clean up
+      socket?.emit("new-twish-posted", newTwish.id);
       mediaFiles.forEach((media) => URL.revokeObjectURL(media.preview));
       setMediaFiles([]);
       setContent("");
