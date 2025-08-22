@@ -4,8 +4,8 @@ import { likes, pictures, twishes, users } from "@/db/schema";
 import { and, desc, eq, isNotNull, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 
-function twishDbQuery(){
-  // 1. CTE for Reply Counts
+function twishDbQuery() {
+  // 1. CTE for Reply Counts (Değişiklik yok)
   const replyCounts = db.$with("reply_counts").as(
     db.select({
         originalTwishId: twishes.originalTwishId,
@@ -25,7 +25,6 @@ function twishDbQuery(){
       .select({
         twishId: likes.twishId,
         count: sql<number>`count(${likes.userId})`.as("count"),
-        // Aggregate liked user IDs into a single field
         likedByUserIds: sql<string[]>`group_concat(${likes.userId})`.mapWith((csv) => (csv ? csv.split(',').filter(Boolean) : [])).as("liked_by_user_ids"),
       })
       .from(likes)
@@ -37,11 +36,9 @@ function twishDbQuery(){
     db.select({
         originalTwishId: twishes.originalTwishId,
         count: sql<number>`count(${twishes.id})`.as("count"),
-        // Aggregate retweeting user IDs here
         retwishedByUserIds: sql<string[]>`group_concat(${twishes.authorId})`.mapWith((csv) => (csv ? csv.split(',').filter(Boolean) : [])).as("retwished_by_user_ids"),
       })
       .from(twishes)
-      // We only count twishes that are 'retwishes' and have a parent
       .where(and(
         eq(twishes.type, 'retwish'),
         isNotNull(twishes.originalTwishId)
@@ -49,7 +46,6 @@ function twishDbQuery(){
       .groupBy(twishes.originalTwishId)
   );
 
-  // 4. Aliases for joining the original twish and its author
   const originalTwish = alias(twishes, "original_twish");
   const parentTwish = alias(twishes, "parent_twish");
   const originalAuthor = alias(users, "original_author");
@@ -58,8 +54,13 @@ function twishDbQuery(){
   const originalProfilePictures = alias(pictures, "original_profile_pictures");
   const parentProfilePictures = alias(pictures, "parent_profile_pictures");
 
+  const quotedOriginalTwish = alias(twishes, "quoted_original_twish");
+  const quotedOriginalAuthor = alias(users, "quoted_original_author");
+  const quotedOriginalProfilePictures = alias(pictures, "quoted_original_profile_pictures");
+
+
   return db
-    .with(likeCounts, retwishCounts, replyCounts) // Include all CTEs
+    .with(likeCounts, retwishCounts, replyCounts)
     .select({
       id: twishes.id,
       content: twishes.content,
@@ -69,12 +70,12 @@ function twishDbQuery(){
       authorName: users.name,
       authorUsername: users.username,
       authorAvatarUrl: mainProfilePictures.url,
-      // Aggregated data from CTEs
       likes: sql<number>`coalesce((select count from like_counts lkc where lkc.twish_id = ${twishes.id}), 0)`.mapWith(Number),
       likedByUserIds: sql<string[]>`(select liked_by_user_ids from like_counts lkc where lkc.twish_id = ${twishes.id})`.mapWith((csv) => csv ? csv.split(',').filter(Boolean) : []),
       comments: sql<number>`coalesce((select count from reply_counts rpc where rpc.original_twish_id = ${twishes.id}), 0)`.mapWith(Number),
       retwishes: sql<number>`coalesce((select count from retwish_counts rtc where rtc.original_twish_id = ${twishes.id}), 0)`.mapWith(Number),
       retwishedByUserIds: sql<string[]>`(select retwished_by_user_ids from retwish_counts rtc where rtc.original_twish_id = ${twishes.id})`.mapWith((csv) => csv ? csv.split(',').filter(Boolean) : []),
+      
       originalTwish: {
         id: originalTwish.id,
         content: originalTwish.content,
@@ -83,12 +84,24 @@ function twishDbQuery(){
         authorName: originalAuthor.name,
         authorUsername: originalAuthor.username,
         authorAvatarUrl: originalProfilePictures.url,
+        type: originalTwish.type,
+      },
+      originalQuotedTwish: {
+        id: quotedOriginalTwish.id,
+        content: quotedOriginalTwish.content,
+        createdAt: quotedOriginalTwish.createdAt,
+        authorId: quotedOriginalAuthor.id,
+        authorName: quotedOriginalAuthor.name,
+        authorUsername: quotedOriginalAuthor.username,
+        authorAvatarUrl: quotedOriginalProfilePictures.url,
+        mediaPreview: quotedOriginalTwish.mediaPreview
       },
       originalLikes: sql<number>`coalesce((select count from like_counts lkc where lkc.twish_id = ${twishes.originalTwishId}), 0)`.mapWith(Number),
       originalLikedByUserIds: sql<string[]>`(select liked_by_user_ids from like_counts lkc where lkc.twish_id = ${twishes.originalTwishId})`.mapWith((csv) => csv ? csv.split(',').filter(Boolean) : []),
       originalRetwishes: sql<number>`coalesce((select count from retwish_counts rtc where rtc.original_twish_id = ${twishes.originalTwishId}), 0)`.mapWith(Number),
       originalRetwishedByUserIds: sql<string[]>`(select retwished_by_user_ids from retwish_counts rtc where rtc.original_twish_id = ${twishes.originalTwishId})`.mapWith((csv) => csv ? csv.split(',').filter(Boolean) : []),
       originalComments: sql<number>`coalesce((select count from reply_counts rpc where rpc.original_twish_id = ${twishes.originalTwishId}), 0)`.mapWith(Number),
+      
       parentTwishId: twishes.parentTwishId,
       parentTwish: {
         id: parentTwish.id,
@@ -110,6 +123,9 @@ function twishDbQuery(){
     .leftJoin(mainProfilePictures, eq(mainProfilePictures.id, users.profilePictureId))
     .leftJoin(originalProfilePictures, eq(originalProfilePictures.id, originalAuthor.profilePictureId))
     .leftJoin(parentProfilePictures, eq(parentProfilePictures.id, parentAuthor.profilePictureId))
+    .leftJoin(quotedOriginalTwish, eq(originalTwish.originalTwishId, quotedOriginalTwish.id))
+    .leftJoin(quotedOriginalAuthor, eq(quotedOriginalTwish.authorId, quotedOriginalAuthor.id))
+    .leftJoin(quotedOriginalProfilePictures, eq(quotedOriginalProfilePictures.id, quotedOriginalAuthor.profilePictureId))
     .orderBy(desc(twishes.createdAt));
 }
 
@@ -126,6 +142,11 @@ export async function getFeedTwishes(userId?: string) {
 
   return (await feedTwishes.limit(20)).map(tw => ({
     ...tw,
+    originalQuotedTwish:
+    { ...tw.originalQuotedTwish, 
+      mediaPreview: tw.originalQuotedTwish.mediaPreview ? 
+      JSON.parse(tw.originalQuotedTwish.mediaPreview) : null 
+    },
     mediaPreview: tw.mediaPreview ? JSON.parse(tw.mediaPreview) : null
   }));
 }

@@ -47,6 +47,16 @@ export interface TwishData {
     authorUsername: string | null;
     authorAvatarUrl: string | null;
   };
+  originalQuotedTwish?: {
+    id: string | null;
+    content: string | null;
+    createdAt: string | null;
+    authorId: string | null;
+    authorName: string | null;
+    authorUsername: string | null;
+    authorAvatarUrl: string | null;
+    mediaPreview?: MediaPreviewItem[] | null;
+  };
   originalLikes: number;
   originalLikedByUserIds?: string[];
   originalRetwishes: number;
@@ -83,6 +93,8 @@ export function TwishCard({ twish }: TwishCardProps) {
     comment: twish.id
   }
 
+  const quoteKeyName = twish.type === "quote" ? "originalTwish" : "originalQuotedTwish"
+
   return (
     <Card onClick={() => router.push(`/twish/${routeTwishId[twish.type as keyof typeof routeTwishId]}?type=${twish.type}`)} className="sm:min-w-2xl w-full mx-auto py-2 rounded-none gap-3 border-t-0">
       {twish.type === "retwish" && <p className="ml-4 flex items-center gap-2 text-xs font-bold"> <Repeat className="w-4 h-4"/> {twish.authorName} retwished</p>}
@@ -99,12 +111,12 @@ export function TwishCard({ twish }: TwishCardProps) {
         </div>
       )}
 
-      {twish.type === "quote" && <EmbeddedTwish embeddedTwish={{
-        content: twish.originalTwish?.content || "",
-        authorAvatarUrl: twish.originalTwish?.authorAvatarUrl || "",
-        authorName: twish.originalTwish?.authorName || "",
-        authorUsername: twish.originalTwish?.authorUsername || "",
-        createdAt: twish.originalTwish?.createdAt || ""
+      {(twish.type === "quote" || twish.originalQuotedTwish?.id) && <EmbeddedTwish embeddedTwish={{
+        content: twish[quoteKeyName]?.content || "",
+        authorAvatarUrl: twish[quoteKeyName]?.authorAvatarUrl || "",
+        authorName: twish[quoteKeyName]?.authorName || "",
+        authorUsername: twish[quoteKeyName]?.authorUsername || "",
+        createdAt: twish[quoteKeyName]?.createdAt || ""
       }}/>}
 
       <Separator className="!h-[0.5px]" />
