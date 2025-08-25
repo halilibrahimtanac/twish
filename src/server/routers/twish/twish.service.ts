@@ -264,7 +264,13 @@ export const getSingleTwish = async (twishId: string) => {
   twishQuery.where(eq(twishes.id, twishId)).limit(1);
   const [result] = (await twishQuery);
 
-  return { ...result, mediaPreview: result.mediaPreview ? JSON.parse(result.mediaPreview) : null};
+  return { ...result,
+    originalQuotedTwish:
+    { ...result.originalQuotedTwish, 
+      mediaPreview: result.originalQuotedTwish.mediaPreview ? 
+      JSON.parse(result.originalQuotedTwish.mediaPreview) : null 
+    },
+     mediaPreview: result.mediaPreview ? JSON.parse(result.mediaPreview) : null};
 };
 
 export const getCommentsByTwishId = async ({ type, twishId }: GetCommentsByTwishIdInput) => {
@@ -276,6 +282,11 @@ export const getCommentsByTwishId = async ({ type, twishId }: GetCommentsByTwish
 
   return result.map(cm => ({
     ...cm,
+    originalQuotedTwish:
+    { ...cm.originalQuotedTwish, 
+      mediaPreview: cm.originalQuotedTwish.mediaPreview ? 
+      JSON.parse(cm.originalQuotedTwish.mediaPreview) : null 
+    },
     mediaPreview: cm.mediaPreview ? JSON.parse(cm.mediaPreview) : null
   }));
 }

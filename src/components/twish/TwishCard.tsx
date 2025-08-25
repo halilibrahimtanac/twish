@@ -112,6 +112,7 @@ export function TwishCard({ twish }: TwishCardProps) {
       )}
 
       {(twish.type === "quote" || twish.originalQuotedTwish?.id) && <EmbeddedTwish embeddedTwish={{
+        id: twish[quoteKeyName]?.id || "",
         content: twish[quoteKeyName]?.content || "",
         authorAvatarUrl: twish[quoteKeyName]?.authorAvatarUrl || "",
         authorName: twish[quoteKeyName]?.authorName || "",

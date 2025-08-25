@@ -64,7 +64,13 @@ export const likes = sqliteTable("likes", {
 export const usersRelations = relations(users, ({ many }) => ({
   twishes: many(twishes),
   pictures: many(pictures),
-  likes: many(likes)
+  likes: many(likes),
+  following: many(follows, {
+    relationName: "following",
+  }),
+  followers: many(follows, {
+    relationName: "followers",
+  }),
 }));
 
 export const twishesRelations = relations(twishes, ({ one, many }) => ({
@@ -111,7 +117,30 @@ export const likesRelations = relations(likes, ({ one }) => ({
   }),
 }));
 
+export const follows = sqliteTable("follows", {
+  followerId: text("follower_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  followingId: text("following_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+}, (self) => ([
+  primaryKey({ columns: [self.followerId, self.followingId] }),
+])
+);
+
+export const followsRelations = relations(follows, ({ one }) => ({
+  follower: one(users, {
+    fields: [follows.followerId],
+    references: [users.id],
+    relationName: "following",
+  }),
+  following: one(users, {
+    fields: [follows.followingId],
+    references: [users.id],
+    relationName: "followers",
+  }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type Twish = typeof twishes.$inferSelect;
 export type Media = typeof media.$inferSelect;
 export type Like = typeof likes.$inferSelect;
+export type Follow = typeof follows.$inferSelect;
