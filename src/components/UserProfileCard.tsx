@@ -20,6 +20,7 @@ import TwishList from "./twish/TwishList";
 import { ImageCropModal } from "./ImageCropModal";
 import { useWebRTC } from "./WebRTCContext";
 import { useSocket } from "./SocketContext";
+import FollowButton from "./FollowButton";
 
 export function UserProfileCard({
   id,
@@ -191,7 +192,6 @@ export function UserProfileCard({
   return (
     <div className="w-full flex flex-col items-center">
       <Card className="w-full max-w-2xl border-t-0 rounded-none mx-auto overflow-hidden pt-0">
-        {/* Hidden file inputs for image selection */}
         <input
           type="file"
           ref={profilePictureInputRef}
@@ -234,7 +234,6 @@ export function UserProfileCard({
                   {initials(name)}
                 </AvatarFallback>
               </Avatar>
-              {/* Edit button for profile picture, shown only in edit mode */}
               {isEditing && (
                 <Button
                   variant="outline"
@@ -290,6 +289,8 @@ export function UserProfileCard({
                   </Button>
                 ) : (
                   <span className="flex justify-end gap-2">
+                    {id && <FollowButton followingId={id} />}
+
                     <Button variant="outline">
                       <MessageCircle className="h-4 w-4" />
                     </Button>
