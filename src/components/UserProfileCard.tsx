@@ -21,6 +21,7 @@ import { ImageCropModal } from "./ImageCropModal";
 import { useWebRTC } from "./WebRTCContext";
 import { useSocket } from "./SocketContext";
 import FollowButton from "./FollowButton";
+import { Spinner } from "./ui/Spinner";
 
 export function UserProfileCard({
   id,
@@ -29,22 +30,21 @@ export function UserProfileCard({
   bio: initialBio,
   profilePictureUrl: initialProfilePictureUrl,
   backgroundPictureUrl: initialBackgroundPictureUrl,
-  canEdit = false,
-}: Partial<User & { canEdit: boolean }>) {
+  canEdit = false
+}: Partial<User & { canEdit: boolean; followerCount: number; followingCount: number; }>) {
   const { setUser } = useUserStore();
   const updateUserInfo = trpc.user.updateUserInfo.useMutation({
     onSuccess: (data) => {
       console.log("saved: ", data);
     },
   });
+  const { data, isPending } = trpc.follows.userFollowCounts.useQuery({ id: id || "" });
 
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(initialName || "");
   const [bio, setBio] = useState(initialBio || "");
 
-  const [profilePictureUrl, setProfilePictureUrl] = useState<
-    string | undefined
-  >(initialProfilePictureUrl || undefined);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | undefined>(initialProfilePictureUrl || undefined);
   const [backgroundPictureUrl, setBackgroundPictureUrl] = useState<
     string | undefined
   >(initialBackgroundPictureUrl || undefined);
@@ -56,7 +56,6 @@ export function UserProfileCard({
     File | undefined
   >();
 
-  // Modal states
   const [showProfileCropModal, setShowProfileCropModal] = useState(false);
   const [tempProfileImageSrc, setTempProfileImageSrc] = useState<string>("");
   const [tempProfileFileName, setTempProfileFileName] = useState<string>("");
@@ -269,7 +268,12 @@ export function UserProfileCard({
               ) : (
                 <h1 className="text-lg font-bold">{name}</h1>
               )}
-              <p className={cn("text-sm text-muted-foreground", isEditing && "mt-2")}>
+              <p
+                className={cn(
+                  "text-sm text-muted-foreground",
+                  isEditing && "mt-2"
+                )}
+              >
                 @{username}
               </p>
             </div>
@@ -300,11 +304,13 @@ export function UserProfileCard({
                       className="justify-center"
                     >
                       <Video className="h-4 w-4" />
-                      {(isOnline && isCalling) ? (
+                      {isOnline && isCalling ? (
                         <span className="inline-flex items-center">
                           <span className="dot-typing"></span>
                         </span>
-                      ) : ""}
+                      ) : (
+                        ""
+                      )}
                     </Button>
                     <style jsx>{`
                       .dot-typing {
@@ -313,8 +319,10 @@ export function UserProfileCard({
                         height: 10px;
                         display: inline-block;
                       }
-                      .dot-typing::before, .dot-typing::after, .dot-typing span {
-                        content: '';
+                      .dot-typing::before,
+                      .dot-typing::after,
+                      .dot-typing span {
+                        content: "";
                         display: inline-block;
                         width: 6px;
                         height: 6px;
@@ -337,9 +345,15 @@ export function UserProfileCard({
                         animation-delay: 0.4s;
                       }
                       @keyframes dotTyping {
-                        0% { opacity: 0.2; }
-                        20% { opacity: 1; }
-                        100% { opacity: 0.2; }
+                        0% {
+                          opacity: 0.2;
+                        }
+                        20% {
+                          opacity: 1;
+                        }
+                        100% {
+                          opacity: 0.2;
+                        }
                       }
                     `}</style>
                   </span>
@@ -382,16 +396,16 @@ export function UserProfileCard({
             </div>
           </div>
 
-          <div className="flex gap-4 pt-2">
+          {isPending ? <div className="w-full flex justify-center items-center"><Spinner /></div> : <div className="flex gap-4 pt-2">
             <div>
-              <span className="font-bold">1,234</span>
+              <span className="font-bold">{data?.followingCount || 0}</span>
               <span className="text-muted-foreground ml-1">Following</span>
             </div>
             <div>
-              <span className="font-bold">5,678</span>
+              <span className="font-bold">{data?.followerCount || 0}</span>
               <span className="text-muted-foreground ml-1">Followers</span>
             </div>
-          </div>
+          </div>}
         </div>
       </Card>
 

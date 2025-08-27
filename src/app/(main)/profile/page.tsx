@@ -7,9 +7,7 @@ import React from "react";
 
 const Profile: React.FC = () => {
   const { user } = useUserStore();
-  const getUser = trpc.user.getUserProfileInfos.useQuery({
-    id: user?.id || "",
-  });
+  const getUser = trpc.user.getUserProfileInfos.useQuery({ id: user?.id || "" });
 
   return (
     <QueryStateHandler query={getUser}>

@@ -1,6 +1,6 @@
 import db from "@/db";
-import { pictures, users, type User } from "@/db/schema";
-import { eq, or } from "drizzle-orm";
+import { follows, pictures, users, type User } from "@/db/schema";
+import { eq, or, sql } from "drizzle-orm";
 import { hashPassword, comparePassword } from "@/lib/password";
 import { createAndSetSession } from "@/lib/auth";
 import type { AddUserInput, LoginInput, SaveUserInputType } from "./user.input";
@@ -125,7 +125,29 @@ export async function getUserProfileInfos(id: string) {
   const profilePics = alias(pictures, "profile_pics");
   const backgroundPics = alias(pictures, "background_pics");
 
-  const foundUser = await db
+  const followerCounts = db.$with("follower_counts").as(
+    db.select({
+      followingId: follows.followingId,
+      followerCount: sql<number>`count(${follows.followingId})`.as("followerCount")
+    })
+    .from(follows)
+    .leftJoin(users, or(eq(users.id, id), eq(users.username, id)))
+    .where(eq(follows.followingId, users.id))
+    .groupBy(follows.followingId)
+  );
+  
+  const followingCounts = db.$with("following_counts").as(
+    db.select({
+      followerId: follows.followerId,
+      followingCount: sql<number>`count(${follows.followerId})`.as("followingCount")
+    })
+    .from(follows)
+    .leftJoin(users, or(eq(users.id, id), eq(users.username, id)))
+    .where(eq(follows.followerId, users.id))
+    .groupBy(follows.followerId)
+  );
+  
+  const foundUser = await db.with(followerCounts, followingCounts)
     .select({
       id: users.id,
       email: users.email,
@@ -134,10 +156,14 @@ export async function getUserProfileInfos(id: string) {
       username: users.username,
       profilePictureUrl: profilePics.url,
       backgroundPictureUrl: backgroundPics.url,
+      followerCount: sql<number>`COALESCE(${followerCounts.followerCount}, 0)`,
+      followingCount: sql<number>`COALESCE(${followingCounts.followingCount}, 0)`
     })
     .from(users)
     .leftJoin(profilePics, eq(users.profilePictureId, profilePics.id))
     .leftJoin(backgroundPics, eq(users.backgroundPictureId, backgroundPics.id))
+    .leftJoin(followerCounts, eq(followerCounts.followingId, users.id))
+    .leftJoin(followingCounts, eq(followingCounts.followerId, users.id))
     .where(or(eq(users.id, id), eq(users.username, id)))
     .limit(1);
 

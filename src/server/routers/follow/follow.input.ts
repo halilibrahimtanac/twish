@@ -5,4 +5,9 @@ export const followInput = z.object({
     followingId: z.string().min(1)
 });
 
+export const userFollowCount = z.object({
+    id: z.string().min(1)
+})
+
 export type FollowInput = z.infer<typeof followInput>;
+export type userFollowCount = z.infer<typeof userFollowCount>;
