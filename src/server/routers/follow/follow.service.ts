@@ -1,7 +1,8 @@
 import db from "@/db";
-import { FollowInput } from "./follow.input";
+import { FollowerOrFollowingList, FollowInput } from "./follow.input";
 import { and, eq, or, sql } from "drizzle-orm";
-import { follows, users } from "@/db/schema";
+import { follows, pictures, users } from "@/db/schema";
+import { alias } from "drizzle-orm/sqlite-core";
 
 export const followService = async (input: FollowInput) => {
   const { followerId, followingId } = input;
@@ -85,3 +86,44 @@ export const getUserFollowingCounts = async (id: string) => {
 
   return foundUser[0];
 }
+
+export const getFollowerOrFollowingList = async (
+  input: FollowerOrFollowingList
+) => {
+  const profilePics = alias(pictures, "profile_pics");
+  const { id, type } = input;
+
+  const followerList = db.$with("follower_list").as(
+    db
+      .select({
+        userId: follows.followerId,
+      })
+      .from(follows)
+      .where(eq(follows.followingId, id))
+  );
+
+
+  const followingList = db.$with("following_list").as(
+    db
+      .select({
+        userId: follows.followingId,
+      })
+      .from(follows)
+      .where(eq(follows.followerId, id))
+  );
+  
+  const targetList = type === "follower" ? followerList : followingList;
+
+  const list = await db
+    .with(targetList)
+    .select({
+      name: users.name,
+      username: users.username,
+      profilePictureUrl: profilePics.url,
+    })
+    .from(targetList)
+    .innerJoin(users, eq(targetList.userId, users.id))
+    .leftJoin(profilePics, eq(users.profilePictureId, profilePics.id));
+
+  return list || [];
+};

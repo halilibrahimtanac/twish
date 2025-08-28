@@ -16,12 +16,15 @@ import {
   Video,
 } from "lucide-react";
 import { useState, useRef, ChangeEvent, useEffect } from "react";
-import TwishList from "./twish/TwishList";
-import { ImageCropModal } from "./ImageCropModal";
-import { useWebRTC } from "./WebRTCContext";
-import { useSocket } from "./SocketContext";
+import TwishList from "../twish/TwishList";
+
+import { useWebRTC } from "../WebRTCContext";
+import { useSocket } from "../SocketContext";
+
+import { Spinner } from "../ui/Spinner";
 import FollowButton from "./FollowButton";
-import { Spinner } from "./ui/Spinner";
+import { ImageCropModal } from "./ImageCropModal";
+import FollowList from "./FollowList";
 
 export function UserProfileCard({
   id,
@@ -43,6 +46,9 @@ export function UserProfileCard({
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(initialName || "");
   const [bio, setBio] = useState(initialBio || "");
+
+  const [followListOpen, setFollowListOpen] = useState(false);
+  const [followListType, setFollowListType] = useState<"follower" | "following">("following");
 
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | undefined>(initialProfilePictureUrl || undefined);
   const [backgroundPictureUrl, setBackgroundPictureUrl] = useState<
@@ -187,6 +193,11 @@ export function UserProfileCard({
     setProfilePictureFile(croppedImageFile);
     setProfilePictureUrl(URL.createObjectURL(croppedImageFile));
   };
+
+  const followListOpenHandler = (type: "follower" | "following") => {
+    setFollowListOpen(true);
+    setFollowListType(type);
+  }
 
   return (
     <div className="w-full flex flex-col items-center">
@@ -397,11 +408,11 @@ export function UserProfileCard({
           </div>
 
           {isPending ? <div className="w-full flex justify-center items-center"><Spinner /></div> : <div className="flex gap-4 pt-2">
-            <div>
+            <div className="cursor-pointer" onClick={() => followListOpenHandler("following")}>
               <span className="font-bold">{data?.followingCount || 0}</span>
               <span className="text-muted-foreground ml-1">Following</span>
             </div>
-            <div>
+            <div className="cursor-pointer" onClick={() => followListOpenHandler("follower")}>
               <span className="font-bold">{data?.followerCount || 0}</span>
               <span className="text-muted-foreground ml-1">Followers</span>
             </div>
@@ -419,6 +430,9 @@ export function UserProfileCard({
         onCropComplete={handleProfileCropComplete}
         fileName={tempProfileFileName}
       />
+
+      {/* FollowList */}
+      <FollowList id={id || ""} type={followListType} isOpen={followListOpen} onOpenChange={setFollowListOpen}/>
     </div>
   );
 }

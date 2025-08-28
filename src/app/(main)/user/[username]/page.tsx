@@ -1,7 +1,7 @@
 "use client";
 import { trpc } from "@/app/_trpc/client";
 import { QueryStateHandler } from "@/components/QueryStateHandler"; // Yeni import
-import { UserProfileCard } from "@/components/UserProfileCard";
+import { UserProfileCard } from "@/components/profile/UserProfileCard";
 import { useParams } from "next/navigation";
 import React from "react";
 

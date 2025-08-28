@@ -1,5 +1,5 @@
 import { trpc } from "@/app/_trpc/client";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import { useUserStore } from "@/lib/store/user.store";
 import { useState } from "react";
 import { cn } from "@/lib/utils";

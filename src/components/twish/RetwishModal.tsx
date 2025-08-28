@@ -420,6 +420,7 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
   const embeddedContent = (
     <EmbeddedTwish
       embeddedTwish={{
+        id: embeddedTwish.id,
         authorAvatarUrl: embeddedTwish.authorAvatarUrl,
         authorName: embeddedTwish.authorName,
         authorUsername: embeddedTwish.authorUsername,
