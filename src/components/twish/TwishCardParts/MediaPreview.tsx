@@ -103,7 +103,7 @@ const MediaPreview = ({ mediaItems }: { mediaItems: MediaPreviewItem[] }) => {
           {/* Media Content */}
           <div 
             className="relative max-w-full max-h-full"
-            onClick={(e) => e.stopPropagation()} // İçeriğe tıkladığında modal kapanmasın
+            onClick={(e) => e.stopPropagation()}
           >
             {fullscreenMedia.type === "image" ? (
               <Image

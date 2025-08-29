@@ -68,51 +68,51 @@ const FollowList: React.FC<FollowListProps> = ({ id, type, isOpen, onOpenChange 
               <ScrollArea className="max-h-[60vh] pr-4">
                 <div className="flex flex-col gap-1">
                   {getFollowerOrFollowingList?.data?.map(
-                    (user: FollowUser) =>
-                      user &&
-                      user.username && (
+                    (u: FollowUser) =>
+                      u &&
+                      u.username && (
                         <div
-                          key={user.username}
+                          key={u.username}
                           className="flex items-center justify-between p-2 rounded-lg hover:bg-accent"
                         >
                           <div className="flex items-center gap-4">
-                            <Link href={`/${user.username}`}>
+                            <Link href={(user?.id === u.id) ? "/profile" : `/user/${u.username}`}>
                               <Avatar>
                                 <AvatarImage
-                                  src={user.profilePictureUrl ?? undefined}
-                                  alt={user.name ?? user.username}
+                                  src={u.profilePictureUrl ?? undefined}
+                                  alt={u.name ?? u.username}
                                 />
                                 <AvatarFallback>
-                                  {user.name?.substring(0, 2).toUpperCase() ??
-                                    user.username.substring(0, 2).toUpperCase()}
+                                  {u.name?.substring(0, 2).toUpperCase() ??
+                                    u.username.substring(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                             </Link>
 
                             <div>
                               <Link
-                                href={`/user/${user.username}`}
+                                href={(user?.id === u.id) ? "/profile" : `/user/${u.username}`}
                                 className="font-semibold leading-none hover:underline"
                               >
-                                {user.name ?? user.username}
+                                {u.name ?? u.username}
                               </Link>
                               <p className="text-sm text-muted-foreground">
-                                @{user.username}
+                                @{u.username}
                               </p>
                             </div>
                           </div>
-                          <Button
+                          {!(user?.id === u.id) && <Button
                             variant={
-                              user.isFollowing
+                              u.isFollowing
                                 ? "destructive-outline"
                                 : "outline"
                             }
                             size="sm"
                             className="w-24"
-                            onClick={() => handleFollowClick(user?.id || "")}
+                            onClick={() => handleFollowClick(u?.id || "")}
                           >
-                            {user.isFollowing ? "Unfollow" : "Follow"}
-                          </Button>
+                            {u.isFollowing ? "Unfollow" : "Follow"}
+                          </Button>}
                         </div>
                       )
                   )}

@@ -1,17 +1,18 @@
 'use client';
 
 import { Phone, PhoneOff } from 'lucide-react';
-import { useWebRTC } from '../WebRTCContext';
+import { CallUserType, useWebRTC } from '../WebRTCContext';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
-export const IncomingCallNotification = () => {
-  const { incomingCall, answerCall, rejectCall } = useWebRTC();
+export const IncomingCallNotification = ({ callingUserInfo }: { callingUserInfo?: CallUserType }) => {
+  const { incomingCall, answerCall, rejectCall, cancelCall } = useWebRTC();
 
-  if (!incomingCall) return null;
+  if (!incomingCall && !callingUserInfo) return null;
 
-  const callerInfo = incomingCall.foundUser;
+  const callerInfo = callingUserInfo || incomingCall?.foundUser;
 
   return (
     <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50">
@@ -40,24 +41,24 @@ export const IncomingCallNotification = () => {
           </div>
         </CardHeader>
         <CardContent className="py-2 px-4 text-center">
-          <p className="text-lg font-medium text-gray-700">seni arıyor...</p>
+          <p className="text-lg font-medium text-gray-700">{callingUserInfo ? "calling..." : "is calling you..."}</p>
         </CardContent>
-        <CardFooter className="flex justify-between p-4 bg-gray-50 border-t">
+        <CardFooter className={cn("flex p-4 bg-gray-50 border-t", callingUserInfo ? "justify-center" : "justify-between")}>
           <Button
             variant="outline"
             size="icon"
-            onClick={rejectCall}
+            onClick={callingUserInfo ? () => cancelCall(callingUserInfo.id) : rejectCall}
             className="w-12 h-12 rounded-full border-red-500 text-red-500 hover:bg-red-100 transition-colors"
           >
             <PhoneOff className="h-6 w-6" />
           </Button>
-          <Button
+          {!callingUserInfo && <Button
             size="icon"
             onClick={answerCall}
             className="w-12 h-12 rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors"
           >
             <Phone className="h-6 w-6" />
-          </Button>
+          </Button>}
         </CardFooter>
       </Card>
     </div>

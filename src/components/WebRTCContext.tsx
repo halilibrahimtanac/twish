@@ -7,13 +7,7 @@ import { useSocket } from './SocketContext';
 import { useUserStore } from '@/lib/store/user.store';
 import { trpc } from '@/app/_trpc/client';
 
-interface IWebRTCContext {
-  localStream: MediaStream | null;
-  remoteStream: MediaStream | null;
-  isCallActive: boolean;
-  isGettingMedia: boolean;
-  isCalling: boolean;
-  incomingCall: { from: string; signal: any; foundUser: {
+export type CallUserType = {
     id: string;
     email: string;
     name: string;
@@ -21,9 +15,17 @@ interface IWebRTCContext {
     username: string;
     profilePictureUrl: string | null;
     backgroundPictureUrl: string | null;
-} } | null;
+}
+
+interface IWebRTCContext {
+  localStream: MediaStream | null;
+  remoteStream: MediaStream | null;
+  isCallActive: boolean;
+  isGettingMedia: boolean;
+  isCalling: boolean;
+  incomingCall: { from: string; signal: any; foundUser: CallUserType } | null;
   answeredCallUserId: string | null;
-  callingUserId: string | null;
+  callingUserInfo: CallUserType | null;
   startCall: (targetUserId: string) => void;
   answerCall: () => void;
   rejectCall: () => void;
@@ -52,7 +54,7 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
   const [isGettingMedia, setIsGettingMedia] = useState(false);
   const [isCalling, setIsCalling] = useState(false);
   const [answeredCallUserId, setAnsweredCallUserId] = useState<string | null>(null);
-  const [callingUserId, setCallingUserId] = useState<string | null>(null);
+  const [callingUserInfo, setCallingUserInfo] = useState<CallUserType | null>(null);
   const peerRef = useRef<Peer.Instance | null>(null);
 
   const utils = trpc.useUtils();
@@ -86,7 +88,7 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
     socket.on("call-cancelled", () => {
       cleanUp();
       setIsCalling(false);
-      setIncomingCall({});
+      setIncomingCall(null);
     })
 
     return () => {
@@ -111,7 +113,7 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
     setIsCallActive(false);
     setIncomingCall(null);
     setAnsweredCallUserId(null);
-    setCallingUserId(null);
+    setCallingUserInfo(null);
   };
   
   const startCall = async (targetUserId: string) => {
@@ -119,7 +121,8 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
 
     setIsGettingMedia(true);
     setIsCalling(true);
-    setCallingUserId(targetUserId);
+    const foundUser = await utils.user.getUserProfileInfos.fetch({ id: targetUserId });
+    setCallingUserInfo(foundUser);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setLocalStream(stream);
@@ -245,7 +248,7 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
     isCalling,
     incomingCall,
     answeredCallUserId,
-    callingUserId,
+    callingUserInfo,
     startCall,
     answerCall,
     rejectCall,

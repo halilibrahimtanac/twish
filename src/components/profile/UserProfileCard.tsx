@@ -359,8 +359,6 @@ export function UserProfileCard({
                   </Button>
                 ) : (
                   <span className="flex justify-end gap-2">
-                    {id && <FollowButton followingId={id} />}
-
                     <Button variant="outline">
                       <MessageCircle className="h-4 w-4" />
                     </Button>
@@ -490,15 +488,17 @@ export function UserProfileCard({
             )}
           </div>
 
-          {isPending ? <div className="w-full flex justify-center items-center"><Spinner /></div> : <div className="flex gap-4 pt-2">
-            <div className="cursor-pointer" onClick={() => followListOpenHandler("following")}>
+          {isPending ? <div className="w-full flex justify-center items-center"><Spinner /></div> : <div className="items-center flex gap-4">
+            <div className="cursor-pointer h-fit" onClick={() => followListOpenHandler("following")}>
               <span className="font-bold">{data?.followingCount || 0}</span>
               <span className="text-muted-foreground ml-1">Following</span>
             </div>
-            <div className="cursor-pointer" onClick={() => followListOpenHandler("follower")}>
+            <div className="cursor-pointer h-fit" onClick={() => followListOpenHandler("follower")}>
               <span className="font-bold">{data?.followerCount || 0}</span>
               <span className="text-muted-foreground ml-1">Followers</span>
             </div>
+
+            {id && !canEdit && <FollowButton followingId={id} />}
           </div>}
         </div>
       </Card>
