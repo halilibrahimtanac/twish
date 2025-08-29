@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
+import { City } from "../city-search";
 
 export interface User {
   id: string;
@@ -9,6 +10,7 @@ export interface User {
   bio: string | null;
   profilePictureUrl: string | undefined;
   backgroundPictureUrl: string | undefined;
+  location: City | undefined;
 }
 
 type UserState = {

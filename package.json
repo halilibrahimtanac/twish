@@ -32,6 +32,7 @@
     "drizzle-kit": "^0.31.1",
     "drizzle-orm": "^0.44.2",
     "formidable": "^3.5.4",
+    "fuse.js": "^7.1.0",
     "jose": "^6.0.11",
     "lucide-react": "^0.515.0",
     "next": "15.3.3",
@@ -44,6 +45,7 @@
     "socket.io-client": "^4.8.1",
     "sonner": "^2.0.5",
     "tailwind-merge": "^3.3.1",
+    "use-debounce": "^10.0.5",
     "zod": "^3.25.64",
     "zustand": "^5.0.5"
   },

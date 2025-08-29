@@ -11,6 +11,7 @@ export const users = sqliteTable("users", {
   bio: text("bio"),
   profilePictureId: text("profile_picture_id"),
   backgroundPictureId: text("background_picture_id"),
+  location: text("location"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
 });

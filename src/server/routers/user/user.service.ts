@@ -156,6 +156,7 @@ export async function getUserProfileInfos(id: string) {
       username: users.username,
       profilePictureUrl: profilePics.url,
       backgroundPictureUrl: backgroundPics.url,
+      location: users.location,
       followerCount: sql<number>`COALESCE(${followerCounts.followerCount}, 0)`,
       followingCount: sql<number>`COALESCE(${followingCounts.followingCount}, 0)`
     })
@@ -171,8 +172,24 @@ export async function getUserProfileInfos(id: string) {
 }
 
 export async function saveUserInfoService(input: SaveUserInputType) {
-  let newProfilePictureId: string | undefined;
-  let newBackgroundPictureId: string | undefined;
+  const updateData: {
+    name?: string;
+    bio?: string | null;
+    location?: string | null;
+    profilePictureId?: string;
+    backgroundPictureId?: string;
+  } = {};
+
+  if (input.name) {
+    updateData.name = input.name;
+  }
+
+  if (input.bio !== undefined) {
+    updateData.bio = input.bio;
+  }
+  if (input.location !== undefined) {
+    updateData.location = input.location;
+  }
 
   if (input.profilePictureUrl) {
     const newProfilePictureRow = await db
@@ -182,27 +199,33 @@ export async function saveUserInfoService(input: SaveUserInputType) {
         type: "profile_picture",
         url: input.profilePictureUrl,
         uploadedBy: input.id,
-      }).returning({ insertedId: pictures.id });
+      })
+      .returning({ insertedId: pictures.id });
 
-    newProfilePictureId = newProfilePictureRow[0].insertedId;
+    updateData.profilePictureId = newProfilePictureRow[0].insertedId;
   }
+
   if (input.backgroundPictureUrl) {
-    const newProfilePictureRow = await db
+    const newBackgroundPictureRow = await db
       .insert(pictures)
       .values({
         id: crypto.randomUUID(),
         type: "background_picture",
         url: input.backgroundPictureUrl,
         uploadedBy: input.id,
-      }).returning({ insertedId: pictures.id });
-
-    newBackgroundPictureId = newProfilePictureRow[0].insertedId;
+      })
+      .returning({ insertedId: pictures.id });
+      
+    updateData.backgroundPictureId = newBackgroundPictureRow[0].insertedId;
   }
 
-  return await db.update(users).set({
-    ...input.name ? { name: input.name } : {},
-    bio: input.bio,
-    profilePictureId: newProfilePictureId,
-    backgroundPictureId: newBackgroundPictureId
-  }).where(eq(users.id, input.id)).returning();
+  if (Object.keys(updateData).length === 0) {
+    return await db.query.users.findFirst({ where: eq(users.id, input.id) });
+  }
+
+  return await db
+    .update(users)
+    .set(updateData)
+    .where(eq(users.id, input.id))
+    .returning();
 }

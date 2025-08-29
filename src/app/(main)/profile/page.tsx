@@ -14,6 +14,7 @@ const Profile: React.FC = () => {
       {getUser.data && (
         <UserProfileCard
           {...getUser.data}
+          location={getUser.data.location ? JSON.parse(getUser.data.location) : null}
           profilePictureUrl={getUser.data?.profilePictureUrl ?? undefined}
           backgroundPictureUrl={getUser.data?.backgroundPictureUrl ?? undefined}
           canEdit={true}

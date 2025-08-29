@@ -20,6 +20,7 @@
 
 /drizzle
 sqlite.db
+/src/lib/data/cities500.json
 
 # production
 /build

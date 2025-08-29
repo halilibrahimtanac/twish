@@ -5,11 +5,10 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { User, useUserStore } from "@/lib/store/user.store";
-import { cn, initials } from "@/lib/utils";
+import { cn, formatCityName, initials } from "@/lib/utils";
 import { SaveUserInputType } from "@/server/routers/user/user.input";
 import {
   MapPin,
-  Link as LinkIcon,
   Edit,
   Camera,
   MessageCircle,
@@ -25,6 +24,8 @@ import { Spinner } from "../ui/Spinner";
 import FollowButton from "./FollowButton";
 import { ImageCropModal } from "./ImageCropModal";
 import FollowList from "./FollowList";
+import { City } from "@/lib/city-search";
+import { useDebounce } from "use-debounce"
 
 export function UserProfileCard({
   id,
@@ -33,6 +34,7 @@ export function UserProfileCard({
   bio: initialBio,
   profilePictureUrl: initialProfilePictureUrl,
   backgroundPictureUrl: initialBackgroundPictureUrl,
+  location: initialLocation,
   canEdit = false
 }: Partial<User & { canEdit: boolean; followerCount: number; followingCount: number; }>) {
   const { setUser } = useUserStore();
@@ -71,6 +73,38 @@ export function UserProfileCard({
   const [isOnline, setIsOnline] = useState(false);
   const { socket } = useSocket();
   const { startCall, isCallActive, isCalling } = useWebRTC();
+
+  const [location, setLocation] = useState<City | null>(initialLocation as City || null);
+  const [locationQuery, setLocationQuery] = useState(formatCityName(initialLocation || null));
+  const [debouncedLocationQuery] = useDebounce(locationQuery, 300);
+  
+  const [suggestions, setSuggestions] = useState<City[]>([]);
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (debouncedLocationQuery.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+
+    const fetchSuggestions = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/search-cities?q=${encodeURIComponent(debouncedLocationQuery)}`);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data: City[] = await response.json();
+        setSuggestions(data);
+      } catch (error) {
+        console.error("Failed to fetch city suggestions:", error);
+        setSuggestions([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSuggestions();
+  }, [debouncedLocationQuery]);
 
   useEffect(() => {
     if (socket && id) {
@@ -141,6 +175,10 @@ export function UserProfileCard({
       updateObj.backgroundPictureUrl = newBackgroundPictureUrl;
     }
 
+    if (JSON.stringify(location) !== JSON.stringify(initialLocation)) {
+      updateObj.location = JSON.stringify(location);
+    }
+
     if (name !== initialName) {
       updateObj.name = name;
     }
@@ -169,6 +207,9 @@ export function UserProfileCard({
     setBio(initialBio || "");
     setProfilePictureUrl(initialProfilePictureUrl || undefined);
     setBackgroundPictureUrl(initialBackgroundPictureUrl || undefined);
+    const initialLoc = initialLocation as City | null;
+    setLocation(initialLoc);
+    setLocationQuery(formatCityName(initialLoc));
     setIsEditing(false);
   };
 
@@ -193,6 +234,20 @@ export function UserProfileCard({
     setProfilePictureFile(croppedImageFile);
     setProfilePictureUrl(URL.createObjectURL(croppedImageFile));
   };
+
+  const handleLocationChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setLocationQuery(e.target.value);
+    if (e.target.value === "") {
+        setLocation(null);
+    }
+    setIsSuggestionsOpen(true);
+  }
+
+  const handleSelectLocation = (selection: City) => {
+    setLocation(selection);
+    setLocationQuery(formatCityName(selection));
+    setIsSuggestionsOpen(false);
+  }
 
   const followListOpenHandler = (type: "follower" | "following") => {
     setFollowListOpen(true);
@@ -373,6 +428,47 @@ export function UserProfileCard({
             )}
           </div>
 
+          <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+            {isEditing ? (
+              <>
+                <div className="relative flex items-center gap-2 w-full sm:w-auto">
+                  <MapPin className="h-4 w-4 flex-shrink-0" />
+                  <Input 
+                    placeholder="Location" 
+                    value={locationQuery} 
+                    onChange={handleLocationChange}
+                    onFocus={() => setIsSuggestionsOpen(true)}
+                    onBlur={() => setTimeout(() => setIsSuggestionsOpen(false), 150)}
+                    className="h-8"
+                    autoComplete="off"
+                  />
+                  {isSuggestionsOpen && (
+                    <div className="absolute top-full mt-2 w-full bg-background border rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
+                      {isLoading ? <div><Spinner /></div> : suggestions.map((item) => (
+                        <div 
+                          key={item.id}
+                          className="p-2 hover:bg-muted cursor-pointer text-sm"
+                          onMouseDown={() => handleSelectLocation(item)}
+                        >
+                          {formatCityName(item)}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                {location && (
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" />
+                    {formatCityName(location)}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
           <div>
             {isEditing ? (
               <div className="space-y-2">
@@ -394,19 +490,6 @@ export function UserProfileCard({
             )}
           </div>
 
-          <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <MapPin className="h-4 w-4" />
-              San Francisco, CA
-            </div>
-            <div className="flex items-center gap-1">
-              <LinkIcon className="h-4 w-4" />
-              <a href="#" className="hover:underline text-blue-500">
-                portfolio.com
-              </a>
-            </div>
-          </div>
-
           {isPending ? <div className="w-full flex justify-center items-center"><Spinner /></div> : <div className="flex gap-4 pt-2">
             <div className="cursor-pointer" onClick={() => followListOpenHandler("following")}>
               <span className="font-bold">{data?.followingCount || 0}</span>
@@ -420,6 +503,7 @@ export function UserProfileCard({
         </div>
       </Card>
 
+      {/* User Twish List */}
       <TwishList userIdParam={id} />
 
       {/* Profile Picture Crop Modal */}

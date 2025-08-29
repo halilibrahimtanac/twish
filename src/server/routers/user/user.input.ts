@@ -26,6 +26,7 @@ export const saveUserInfoInput = z.object({
   bio: z.string().optional(),
   profilePictureUrl: z.string().optional(),
   backgroundPictureUrl: z.string().optional(),
+  location: z.string().optional()
 });
 
 export type SaveUserInputType = z.infer<typeof saveUserInfoInput>;

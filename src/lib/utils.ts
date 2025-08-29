@@ -2,6 +2,7 @@ import { trpc } from "@/app/_trpc/client";
 import { clsx, type ClassValue } from "clsx";
 import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
+import { City } from "./city-search";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -52,3 +53,8 @@ export const createMutationOptions = ({
     });
   },
 });
+
+export const formatCityName = (city: City | null) => {
+  if (!city) return "";
+  return `${city.name}, ${city.admin1}, ${city.country}`;
+};
