@@ -23,10 +23,12 @@ interface IWebRTCContext {
     backgroundPictureUrl: string | null;
 } } | null;
   answeredCallUserId: string | null;
+  callingUserId: string | null;
   startCall: (targetUserId: string) => void;
   answerCall: () => void;
   rejectCall: () => void;
   endCall: (targetUserId: string) => void;
+  cancelCall: (targetUserId: string) => void;
 }
 
 const WebRTCContext = createContext<IWebRTCContext | null>(null);
@@ -50,6 +52,7 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
   const [isGettingMedia, setIsGettingMedia] = useState(false);
   const [isCalling, setIsCalling] = useState(false);
   const [answeredCallUserId, setAnsweredCallUserId] = useState<string | null>(null);
+  const [callingUserId, setCallingUserId] = useState<string | null>(null);
   const peerRef = useRef<Peer.Instance | null>(null);
 
   const utils = trpc.useUtils();
@@ -80,11 +83,18 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
         setIsCalling(false);
     });
 
+    socket.on("call-cancelled", () => {
+      cleanUp();
+      setIsCalling(false);
+      setIncomingCall({});
+    })
+
     return () => {
       socket.off('incoming-call');
       socket.off('call-accepted');
       socket.off('call-ended');
       socket.off('call-rejected');
+      socket.off("call-cancelled");
     };
   }, [socket]);
   
@@ -101,6 +111,7 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
     setIsCallActive(false);
     setIncomingCall(null);
     setAnsweredCallUserId(null);
+    setCallingUserId(null);
   };
   
   const startCall = async (targetUserId: string) => {
@@ -108,6 +119,7 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
 
     setIsGettingMedia(true);
     setIsCalling(true);
+    setCallingUserId(targetUserId);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setLocalStream(stream);
@@ -216,6 +228,14 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
     setIsCalling(false);
   };
 
+  const cancelCall = (targetUserId: string) => {
+    if (socket) {
+      socket.emit('cancel-call', { targetUserId });
+    }
+    cleanUp();
+    setIsCalling(false);
+  };
+
 
   const value = {
     localStream,
@@ -225,10 +245,12 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
     isCalling,
     incomingCall,
     answeredCallUserId,
+    callingUserId,
     startCall,
     answerCall,
     rejectCall,
     endCall,
+    cancelCall,
   };
 
   return (

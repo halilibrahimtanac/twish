@@ -16,6 +16,7 @@ const UserPage: React.FC = () => {
     <QueryStateHandler query={userProfileQuery}>
       <UserProfileCard
         {...userProfileQuery.data}
+        location={userProfileQuery.data?.location ? JSON.parse(userProfileQuery.data.location) : null}
         profilePictureUrl={userProfileQuery.data?.profilePictureUrl ?? undefined}
         backgroundPictureUrl={userProfileQuery.data?.backgroundPictureUrl ?? undefined}
       />

@@ -328,7 +328,7 @@ export function UserProfileCard({
                     id="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="text-2xl font-bold p-2 h-auto"
+                    className="sm:text-2xl text-lg font-bold h-8"
                   />
                 </div>
               ) : (
@@ -345,12 +345,12 @@ export function UserProfileCard({
             </div>
 
             {isEditing ? (
-              <>
+              <span className="flex justify-end gap-2 mt-5">
                 <Button variant="outline" onClick={handleCancel}>
                   Cancel
                 </Button>
                 <Button onClick={handleSave}>Save</Button>
-              </>
+              </span>
             ) : (
               <>
                 {canEdit ? (
