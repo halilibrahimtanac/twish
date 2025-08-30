@@ -8,9 +8,9 @@ export interface User {
   username: string;
   name: string;
   bio: string | null;
-  profilePictureUrl: string | undefined;
-  backgroundPictureUrl: string | undefined;
-  location: City | undefined;
+  profilePictureUrl?: string;
+  backgroundPictureUrl?: string;
+  location?: City;
 }
 
 type UserState = {
