@@ -1,6 +1,6 @@
 import { publicProcedure, router } from "@/server/trpc";
 import * as twishService from "./twish.service";
-import { getCommentsByTwishId, getFeedTwishesInput, getSingleTwishInput, likeTwishInput, newTwishInput, reTwishInput, updateTwishMediaPreviewInput } from "./twish.input";
+import { deleteTwishInput, getCommentsByTwishId, getFeedTwishesInput, getSingleTwishInput, likeTwishInput, newTwishInput, reTwishInput, updateTwishMediaPreviewInput } from "./twish.input";
 
 export const twishRouter = router({
     getAllTwishes: publicProcedure.input(getFeedTwishesInput).query(({ input }) => twishService.getFeedTwishes(input.userId)),
@@ -9,5 +9,6 @@ export const twishRouter = router({
     reTwish: publicProcedure.input(reTwishInput).mutation(async ({ input }) => twishService.reTwishService(input)),
     updateTwishMediaPreview: publicProcedure.input(updateTwishMediaPreviewInput).mutation(async ({ input }) => twishService.updateTwishMediaPreviewService(input)),
     getSingleTwish: publicProcedure.input(getSingleTwishInput).query(({ input }) => twishService.getSingleTwish(input.twishId)),
-    getCommentsByTwishId: publicProcedure.input(getCommentsByTwishId).query(({ input }) => twishService.getCommentsByTwishId(input))
+    getCommentsByTwishId: publicProcedure.input(getCommentsByTwishId).query(({ input }) => twishService.getCommentsByTwishId(input)),
+    deleteTwish: publicProcedure.input(deleteTwishInput).mutation(async ({ input }) => twishService.deleteTwishService(input))
 })

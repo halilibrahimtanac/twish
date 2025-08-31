@@ -289,4 +289,27 @@ export const getCommentsByTwishId = async ({ type, twishId }: GetCommentsByTwish
     },
     mediaPreview: cm.mediaPreview ? JSON.parse(cm.mediaPreview) : null
   }));
-}
+};
+
+export const deleteTwishService = async (input: { id: string }) => {
+  const { id } = input;
+
+  const existingTwish = await db
+    .select()
+    .from(twishes)
+    .where(eq(twishes.id, id))
+    .limit(1);
+
+  if (existingTwish.length === 0) {
+    throw new Error("Twish not found");
+  }
+
+  await db
+    .delete(twishes)
+    .where(eq(twishes.id, id))
+    .returning();
+
+  return { success: true };
+};
+
+

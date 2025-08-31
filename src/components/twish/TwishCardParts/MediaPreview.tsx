@@ -1,144 +1,196 @@
 import Image from "next/image";
-import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { useState, useEffect, useCallback } from "react"; // useCallback eklendi
+import { X, ChevronLeft, ChevronRight } from "lucide-react"; // Navigasyon ikonları eklendi
 import { MediaPreviewItem } from "../TwishCard";
+import { cn } from "@/lib/utils";
 
 const MediaPreview = ({ mediaItems }: { mediaItems: MediaPreviewItem[] }) => {
-  const [fullscreenMedia, setFullscreenMedia] = useState<MediaPreviewItem | null>(null);
+  // State'i artık obje yerine index olarak tutuyoruz. null ise kapalı demek.
+  const [currentMediaIndex, setCurrentMediaIndex] = useState<number | null>(null);
 
-  // ESC tuşu ile kapatma
+  const mediaCount = mediaItems.length;
+
+  const openFullscreen = (index: number) => {
+    setCurrentMediaIndex(index);
+  };
+
+  const closeFullscreen = (e?: React.MouseEvent<HTMLElement>) => {
+    e?.stopPropagation();
+    setCurrentMediaIndex(null);
+  };
+
+ 
+  const handleNext = useCallback(() => {
+    if (currentMediaIndex === null) return;
+   
+    const nextIndex = (currentMediaIndex + 1) % mediaCount;
+    setCurrentMediaIndex(nextIndex);
+  }, [currentMediaIndex, mediaCount]);
+
+  const handlePrev = useCallback(() => {
+    if (currentMediaIndex === null) return;
+    const prevIndex = (currentMediaIndex - 1 + mediaCount) % mediaCount;
+    setCurrentMediaIndex(prevIndex);
+  }, [currentMediaIndex, mediaCount]);
+
+
+  // Klavye (ok tuşları ve Esc) ile kontrol
   useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setFullscreenMedia(null);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (currentMediaIndex === null) return;
+
+      if (e.key === "Escape") {
+        closeFullscreen();
+      }
+      if (mediaCount > 1) {
+        if (e.key === "ArrowRight") {
+          handleNext();
+        }
+        if (e.key === "ArrowLeft") {
+          handlePrev();
+        }
       }
     };
 
-    if (fullscreenMedia) {
-      document.addEventListener('keydown', handleEsc);
-      // Body scroll'unu engelle
-      document.body.style.overflow = 'hidden';
+    if (currentMediaIndex !== null) {
+      document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleKeyDown);
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEsc);
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [fullscreenMedia]);
+  }, [currentMediaIndex, mediaCount, handleNext, handlePrev]);
 
-  if (!mediaItems || mediaItems.length === 0) return null;
 
-  const openFullscreen = (item: MediaPreviewItem) => {
-    setFullscreenMedia(item);
-  };
+  if (!mediaItems || mediaCount === 0) return null;
 
-  const closeFullscreen = (e: React.MouseEvent<HTMLElement>) => {
-    e.stopPropagation();
-    setFullscreenMedia(null);
-  };
+  // Gösterilecek olan aktif medya
+  const fullscreenMedia = currentMediaIndex !== null ? mediaItems[currentMediaIndex] : null;
 
   return (
     <>
-      <div className="mt-3 rounded-lg overflow-hidden border">
-        {mediaItems.map((item) => {
-          if (item.type === "image") {
-            return (
-              <div 
-                key={item.id} 
-                className="relative w-full h-auto max-h-96 cursor-pointer hover:opacity-90 transition-opacity"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    openFullscreen(item)
-                }}
+      <div
+        className={cn(
+          "mt-3 grid gap-0.5 overflow-hidden rounded-lg border",
+          mediaCount === 1 ? "grid-cols-1" : "grid-cols-2",
+          mediaCount === 3 ? "grid-rows-2" : "grid-rows-1",
+          mediaCount >= 4 ? "grid-rows-2" : ""
+        )}
+      >
+        {mediaItems.slice(0, 4).map((item, index) => {
+          const itemClasses = mediaCount === 3 && index === 0 ? "row-span-2" : "";
+
+          const mediaElement =
+            item.mimeType.startsWith("image/") ? (
+              <Image
+                src={item.url}
+                alt={item.originalName}
+                fill
+                priority
+                className="h-full w-full object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              />
+            ) : (
+              <video
+                controls={false}
+                muted
+                loop
+                playsInline
+                className="h-full w-full object-cover"
+                preload="metadata"
               >
-                <Image
-                  src={item.url}
-                  alt={item.originalName}
-                  width={800}
-                  height={400}
-                  priority
-                  className="w-full h-auto max-h-96 object-cover"
-                  style={{
-                    maxWidth: '100%',
-                    height: 'auto',
-                  }}
-                />
-              </div>
+                <source src={`${item.url}#t=0.1`} type={item.mimeType} />
+                Your browser does not support the video tag.
+              </video>
             );
-          } else if (item.type === "video" || item.mimeType.startsWith('video/')) {
-            return (
-              <div 
-                key={item.id} 
-                className="relative w-full h-auto max-h-96"
-              >
-                <video
-                  controls
-                  className="w-full h-auto max-h-96 object-cover"
-                  preload="metadata"
-                >
-                  <source src={item.url} type={item.mimeType} />
-                  Your browser does not support the video tag.
-                </video>
-              </div>
-            );
-          }
-          return null;
+
+          return (
+            <div
+              key={item.id}
+              className={cn(
+                "relative w-full cursor-pointer bg-muted transition-opacity hover:opacity-90",
+                mediaCount > 1 ? "aspect-square" : "aspect-video",
+                itemClasses
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                openFullscreen(index); // Artık index gönderiyoruz
+              }}
+            >
+              {mediaElement}
+            </div>
+          );
         })}
       </div>
 
       {/* Fullscreen Modal */}
       {fullscreenMedia && (
-        <div 
-          className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4"
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4"
           onClick={closeFullscreen}
         >
           {/* Close Button */}
           <button
             onClick={closeFullscreen}
-            className="absolute top-4 right-4 z-60 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full p-2 transition-all"
+            className="absolute right-4 top-4 z-[51] rounded-full bg-black bg-opacity-30 p-2 text-white transition-all hover:bg-opacity-50"
           >
-            <X className="w-6 h-6 text-black" />
+            <X className="h-6 w-6" />
           </button>
 
+          {/* Navigasyon: Geri Butonu */}
+          {mediaCount > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePrev();
+              }}
+              className="absolute left-4 top-1/2 z-[51] -translate-y-1/2 rounded-full bg-black bg-opacity-30 p-2 text-white transition-all hover:bg-opacity-50"
+            >
+              <ChevronLeft className="h-7 w-7" />
+            </button>
+          )}
+
+          {/* Navigasyon: İleri Butonu */}
+          {mediaCount > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleNext();
+              }}
+              className="absolute right-4 top-1/2 z-[51] -translate-y-1/2 rounded-full bg-black bg-opacity-30 p-2 text-white transition-all hover:bg-opacity-50"
+            >
+              <ChevronRight className="h-7 w-7" />
+            </button>
+          )}
+
           {/* Media Content */}
-          <div 
-            className="relative max-w-full max-h-full"
+          <div
+            className="relative flex h-full w-full items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            {fullscreenMedia.type === "image" ? (
+            {fullscreenMedia.mimeType.startsWith("image/") ? (
               <Image
                 src={fullscreenMedia.url}
                 alt={fullscreenMedia.originalName}
-                width={1200}
-                height={800}
-                className="max-w-full max-h-full object-contain"
-                style={{
-                  maxWidth: '95vw',
-                  maxHeight: '95vh',
-                }}
+                width={1920}
+                height={1080}
+                className="block h-auto max-h-[95vh] w-auto max-w-[95vw] object-contain"
               />
             ) : (
               <video
                 controls
                 autoPlay
-                className="max-w-full max-h-full object-contain"
-                style={{
-                  maxWidth: '95vw',
-                  maxHeight: '95vh',
-                }}
+                className="max-h-[95vh] max-w-[95vw] object-contain"
               >
-                <source src={fullscreenMedia.url} type={fullscreenMedia.mimeType} />
+                <source
+                  src={fullscreenMedia.url}
+                  type={fullscreenMedia.mimeType}
+                />
                 Your browser does not support the video tag.
               </video>
             )}
-          </div>
-
-          {/* Media Info */}
-          <div className="absolute bottom-4 left-4 text-white bg-black bg-opacity-50 rounded px-3 py-2">
-            <p className="text-sm font-medium">{fullscreenMedia.originalName}</p>
-            <p className="text-xs opacity-75">
-              {(fullscreenMedia.size / 1024).toFixed(1)} KB • {fullscreenMedia.mimeType}
-            </p>
           </div>
         </div>
       )}

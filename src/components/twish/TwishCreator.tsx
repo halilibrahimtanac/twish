@@ -32,13 +32,7 @@ export function TwishCreator() {
   const utils = trpc.useUtils();
   const { mutateAsync: twishMutate, isPending } =
     trpc.twish.newTwish.useMutation({
-      onSuccess: () => {
-        utils.twish.getAllTwishes.invalidate();
-        toast("Success", {
-          description: "Your post has been published.",
-          closeButton: true,
-        });
-      },
+      
       onError: (error) => {
         console.error("Failed to post:", error);
         toast("Error", {
@@ -49,9 +43,6 @@ export function TwishCreator() {
     });
   
   const { mutateAsync: twishUpdate, isPending: isUpdatePending } = trpc.twish.updateTwishMediaPreview.useMutation({
-    onSuccess: () => {
-      utils.twish.getAllTwishes.invalidate();
-    },
     onError: (error) => {
       console.error("Failed to post:", error);
       toast("Error", {
@@ -59,7 +50,17 @@ export function TwishCreator() {
         closeButton: true,
       });
     },
-  })
+  });
+
+  const { mutateAsync: deleteTwish } = trpc.twish.deleteTwish.useMutation({
+    onError: (error) => {
+      console.error("CRITICAL: Failed to rollback (delete) orphaned twish:", error);
+      toast("Critical Error", {
+        description: "Failed to clean up an incomplete post. Please contact support.",
+        closeButton: true,
+      });
+    },
+  });
 
   const MAX_CHARACTERS = 280;
   const MAX_MEDIA_FILES = 4;
@@ -162,7 +163,8 @@ export function TwishCreator() {
     });
 
     if (!response.ok) {
-      throw new Error("File upload failed");
+      const res = await response.json();
+      throw new Error(res.message);
     }
 
     const data = await response.json();
@@ -174,8 +176,9 @@ export function TwishCreator() {
       return;
     }
 
+    let newTwishId: string | null = null;
+
     try {
-      // First create the twish to get the ID
       const newTwish = await twishMutate({
         content,
         username: user?.username || "",
@@ -183,28 +186,44 @@ export function TwishCreator() {
         mediaCount: mediaFiles.length,
       });
 
-      // If there are media files, upload them
-      if (mediaFiles.length > 0 && newTwish.id) {
-        const uploadedFiles = await uploadMediaFiles(newTwish.id, mediaFiles);
+      newTwishId = newTwish.id;
+
+      if (mediaFiles.length > 0 && newTwishId) {
+        const uploadedFiles = await uploadMediaFiles(newTwishId, mediaFiles);
         await twishUpdate({
-          id: newTwish.id,
-          mediaPreview: JSON.stringify(uploadedFiles)
+          id: newTwishId,
+          mediaPreview: JSON.stringify(uploadedFiles),
         });
       }
 
-      // Clean up
-      socket?.emit("new-twish-posted", newTwish.id);
+      toast("Success", {
+        description: "Your post has been published.",
+        closeButton: true,
+      });
+      utils.twish.getAllTwishes.invalidate();
+      socket?.emit("new-twish-posted", newTwishId);
+
       mediaFiles.forEach((media) => URL.revokeObjectURL(media.preview));
       setMediaFiles([]);
       setContent("");
       setPlayingVideos(new Set());
       videoRefs.current = {};
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      console.error("Error creating twish:", error);
-      toast("Error", {
-        description: "Failed to create post. Please try again.",
-        closeButton: true,
-      });
+      
+      if (newTwishId) {
+        toast("Rolling back...", {
+          description: "Media upload failed. Removing the incomplete post.",
+          closeButton: true,
+        });
+        await deleteTwish({ id: newTwishId });
+      } else {
+        toast("Error", {
+          description: "Failed to create post. Please try again.",
+          closeButton: true,
+        });
+      }
     }
   };
 
