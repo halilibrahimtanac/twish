@@ -1,0 +1,125 @@
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useDebounce } from "use-debounce";
+import { SearchInput } from "./ui/search.input";
+import { trpc } from "@/app/_trpc/client";
+import { useUserStore } from "@/lib/store/user.store";
+
+export function UserSearch() {
+  const { user } = useUserStore();
+  const [query, setQuery] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
+  
+  const [debouncedQuery] = useDebounce(query, 300); // 300ms gecikme
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  const { data: users, isLoading } = trpc.search.searchUser.useQuery(
+    { query: debouncedQuery, currentUserId: user?.id || "" },
+    {
+      enabled: debouncedQuery.length >= 2 && isFocused,
+    }
+  );
+
+  // Dışarı tıklandığında sonuçları gizle
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setIsFocused(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [searchContainerRef]);
+  
+  const showResults = isFocused && query.length > 0;
+
+  return (
+    <div className="relative w-full max-w-md" ref={searchContainerRef}>
+      <SearchInput
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onFocus={() => setIsFocused(true)}
+        placeholder="Kullanıcı ara..."
+      />
+
+      {showResults && (
+        <Card className="absolute top-full mt-2 w-full z-10 py-2">
+          <CardContent className="p-2 max-h-80 overflow-y-auto">
+            {isLoading && debouncedQuery.length >= 2 && <LoadingSkeleton />}
+            
+            {!isLoading && users && users.length > 0 && (
+              <ul>
+                {users.map((user) => (
+                  <li key={user.id}>
+                    <Link
+                      href={`/user/${user.username}`}
+                      className="flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors"
+                      onClick={() => {
+                        setIsFocused(false);
+                        setQuery("");
+                      }}
+                    >
+                      <Avatar>
+                        <AvatarImage src={user.profilePictureUrl ?? undefined} />
+                        <AvatarFallback>
+                          {user.name?.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="font-semibold">{user.name}</span>
+                        <span className="text-sm text-muted-foreground">
+                          @{user.username}
+                        </span>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {!isLoading && debouncedQuery.length >= 2 && users?.length === 0 && (
+              <p className="text-center text-sm text-muted-foreground p-4">
+                Sonuç bulunamadı.
+              </p>
+            )}
+
+            {query.length > 0 && query.length < 2 && (
+                 <p className="text-center text-sm text-muted-foreground p-4">
+                    Aramak için en az 2 karakter girin.
+                 </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// Yüklenme durumu için bir skeleton component'i
+const LoadingSkeleton = () => (
+  <div className="space-y-2 p-2">
+    {[...Array(3)].map((_, i) => (
+      <div key={i} className="flex items-center gap-3">
+        <Skeleton className="h-10 w-10 rounded-full" />
+        <div className="space-y-1">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-3 w-24" />
+        </div>
+      </div>
+    ))}
+  </div>
+);

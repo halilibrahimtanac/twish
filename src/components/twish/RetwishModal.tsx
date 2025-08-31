@@ -444,7 +444,7 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleModalClose}>
-      <DialogContent className="sm:max-w-[525px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[525px] max-h-[80vh] overflow-y-auto" closeButtonHandler={(e) => e.stopPropagation()}>
         <DialogHeader>
           <DialogTitle>Amplify this Twish</DialogTitle>
         </DialogHeader>
