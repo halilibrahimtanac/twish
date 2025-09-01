@@ -38,6 +38,10 @@ const TwishFooter: React.FC<Props> = ({ twish }) => {
   const viewRetwishedByUsers = twish.type === "retwish" ? twish.originalRetwishedByUserIds : twish.retwishedByUserIds;
   const viewComments = twish.type === "retwish" ? twish.originalComments : twish.comments;
 
+  if(!user) {
+    return null;
+  }
+
   return (
     <>
       <CardFooter className="py-0 px-2">
@@ -49,14 +53,14 @@ const TwishFooter: React.FC<Props> = ({ twish }) => {
               tooltipText="Like"
               hoverClassName={cn(
                 "group-hover:text-red-500 group-hover:fill-red-500",
-                viewLikedByUsers?.includes(user?.id || "") &&
+                viewLikedByUsers?.includes(user.id) &&
                   "text-red-500 fill-red-500"
               )}
               onClick={(e) =>{
                 e.stopPropagation();
                 likeTwish.mutate({
                   twishId: (twish.type === "retwish" ? twish.originalTwish?.id : twish.id) as string,
-                  username: user?.username || "",
+                  username: user.username,
                 })}
               }
             />
@@ -85,7 +89,7 @@ const TwishFooter: React.FC<Props> = ({ twish }) => {
               tooltipText="Retwish"
               hoverClassName={cn(
                 "group-hover:text-green-500",
-                viewRetwishedByUsers?.includes(user?.id || "") && "text-green-500"
+                viewRetwishedByUsers?.includes(user.id) && "text-green-500"
               )}
               onClick={(e) => {
                 e.stopPropagation();

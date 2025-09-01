@@ -71,7 +71,7 @@ export interface TwishData {
     authorUsername: string | null;
     authorAvatarUrl: string | null;
   };
-  mediaPreview?: MediaPreviewItem[] | null; // Updated type
+  mediaPreview?: MediaPreviewItem[] | null;
 }
 
 interface TwishCardProps {

@@ -17,6 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { addUserInput, AddUserInput } from "@/server/routers/user/user.input";
 import { FormInput } from "@/components/ui/form-input";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -39,6 +40,7 @@ export default function SignupPage() {
 
   const addUser = trpc.user.addUser.useMutation({
     onSuccess: () => {
+      toast("Hesap oluşturuldu, giriş yapınız.");
       router.push("/login");
     },
     onError: (error) => {

@@ -8,8 +8,12 @@ import { cn } from "@/lib/utils";
 import { NavigationMenuLink } from "@/components/ui/navigation-menu";
 import { UserNav } from "./user-nav";
 import { UserSearch } from "../UserSearch";
+import { Button } from "../ui/button";
+import { useUserStore } from "@/lib/store/user.store";
 
 export function Navbar() {
+  const { user } = useUserStore();
+
   return (
     <header className="px-4 sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center justify-between gap-x-4">
@@ -25,12 +29,20 @@ export function Navbar() {
           </Link>
         </div>
 
-        <div className="flex-1 justify-center md:flex">
-          <UserSearch />
-        </div>
+        {user && (
+          <div className="flex-1 justify-center md:flex">
+            <UserSearch />
+          </div>
+        )}
 
         <div className="flex items-center space-x-2">
-          <UserNav />
+          {user ? (
+            <UserNav />
+          ) : (
+            <Link href="/login">
+              <Button variant="ghost">Login</Button> 
+            </Link>
+          )}
         </div>
       </div>
     </header>

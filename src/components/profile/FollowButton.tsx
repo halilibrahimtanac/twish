@@ -6,12 +6,13 @@ import { cn } from "@/lib/utils";
 
 function FollowButton({ followingId }: { followingId: string }) {
   const { user } = useUserStore();
+  if(!user) throw new Error("User not found");
   const utils = trpc.useUtils();
   const [isHovering, setIsHovering] = useState(false);
 
   const { data, isLoading } = trpc.follows.getFollowStatus.useQuery(
-    { followerId: user?.id || "", followingId },
-    { enabled: !!followingId && user?.id !== followingId }
+    { followerId: user.id, followingId },
+    { enabled: !!followingId && user.id !== followingId }
   );
 
   const toggleFollowMutation = trpc.follows.followRoute.useMutation({
@@ -38,7 +39,7 @@ function FollowButton({ followingId }: { followingId: string }) {
   }
 
   const handleFollowClick = () =>
-    toggleFollowMutation.mutateAsync({ followerId: user?.id || "", followingId });
+    toggleFollowMutation.mutateAsync({ followerId: user.id, followingId });
 
   const isFollowing = data.isFollowing;
 

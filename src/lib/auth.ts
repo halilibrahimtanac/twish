@@ -1,10 +1,8 @@
-// src/server/lib/auth.ts
 import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 import type { User } from '@/db/schema';
 
 /**
- * Creates a session JWT and sets it as a secure, httpOnly cookie.
  * @param user - The user object to embed in the token.
  */
 export async function createAndSetSession(user: Pick<User, 'id' | 'email' | 'username'>) {

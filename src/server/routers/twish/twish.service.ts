@@ -291,13 +291,13 @@ export const getCommentsByTwishId = async ({ type, twishId }: GetCommentsByTwish
   }));
 };
 
-export const deleteTwishService = async (input: { id: string }) => {
+export const deleteTwishService = async (userId: string, input: { id: string }) => {
   const { id } = input;
 
   const existingTwish = await db
     .select()
     .from(twishes)
-    .where(eq(twishes.id, id))
+    .where(and(eq(twishes.id, id), eq(twishes.authorId, userId)))
     .limit(1);
 
   if (existingTwish.length === 0) {

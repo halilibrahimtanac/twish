@@ -30,9 +30,10 @@ interface FollowListProps {
 
 const FollowList: React.FC<FollowListProps> = ({ id, type, isOpen, onOpenChange }) => {
   const { user } = useUserStore(); 
+  if(!user) throw new Error("User not found");
   const utils = trpc.useUtils();
   const getFollowerOrFollowingList = trpc.follows.getFollowerOrFollowingList.useQuery(
-    { id, type, userId: user?.id || "" },
+    { id, type, userId: user.id },
     { enabled: isOpen }
   );
   const toggleFollowMutation = trpc.follows.followRoute.useMutation({
@@ -43,7 +44,7 @@ const FollowList: React.FC<FollowListProps> = ({ id, type, isOpen, onOpenChange 
   });
 
   const handleFollowClick = (id: string) =>
-    toggleFollowMutation.mutateAsync({ followerId: user?.id || "", followingId: id });
+    toggleFollowMutation.mutateAsync({ followerId: user.id, followingId: id });
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -76,7 +77,7 @@ const FollowList: React.FC<FollowListProps> = ({ id, type, isOpen, onOpenChange 
                           className="flex items-center justify-between p-2 rounded-lg hover:bg-accent"
                         >
                           <div className="flex items-center gap-4">
-                            <Link href={(user?.id === u.id) ? "/profile" : `/user/${u.username}`}>
+                            <Link href={(user.id === u.id) ? "/profile" : `/user/${u.username}`}>
                               <Avatar>
                                 <AvatarImage
                                   src={u.profilePictureUrl ?? undefined}
@@ -91,7 +92,7 @@ const FollowList: React.FC<FollowListProps> = ({ id, type, isOpen, onOpenChange 
 
                             <div>
                               <Link
-                                href={(user?.id === u.id) ? "/profile" : `/user/${u.username}`}
+                                href={(user.id === u.id) ? "/profile" : `/user/${u.username}`}
                                 className="font-semibold leading-none hover:underline"
                               >
                                 {u.name ?? u.username}
@@ -101,7 +102,7 @@ const FollowList: React.FC<FollowListProps> = ({ id, type, isOpen, onOpenChange 
                               </p>
                             </div>
                           </div>
-                          {!(user?.id === u.id) && <Button
+                          {!(user.id === u.id) && <Button
                             variant={
                               u.isFollowing
                                 ? "destructive-outline"

@@ -16,6 +16,7 @@ import { useUserStore } from "@/lib/store/user.store";
 
 export function UserSearch() {
   const { user } = useUserStore();
+  if(!user) throw new Error("User not found");
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   
@@ -23,7 +24,7 @@ export function UserSearch() {
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const { data: users, isLoading } = trpc.search.searchUser.useQuery(
-    { query: debouncedQuery, currentUserId: user?.id || "" },
+    { query: debouncedQuery, currentUserId: user.id },
     {
       enabled: debouncedQuery.length >= 2 && isFocused,
     }

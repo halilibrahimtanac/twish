@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useState, useRef } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -209,18 +210,17 @@ export function TwishCreator() {
       setPlayingVideos(new Set());
       videoRefs.current = {};
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
+    } catch (error: any) {
       
       if (newTwishId) {
         toast("Rolling back...", {
-          description: "Media upload failed. Removing the incomplete post.",
+          description: error.message,
           closeButton: true,
         });
         await deleteTwish({ id: newTwishId });
       } else {
         toast("Error", {
-          description: "Failed to create post. Please try again.",
+          description: error.message,
           closeButton: true,
         });
       }
