@@ -1,14 +1,45 @@
 import db from "@/db";
 import { FollowerOrFollowingList, FollowInput } from "./follow.input";
-import { and, eq, isNotNull, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 import { follows, pictures, users } from "@/db/schema";
 import { alias } from "drizzle-orm/sqlite-core";
+import { TRPCError } from "@trpc/server";
 
 export const followService = async (input: FollowInput) => {
-  const { followerId, followingId } = input;
+  let followerId: string;
+  let followingId: string;
+
+  if (input.type === "id") {
+    followerId = input.followerId;
+    followingId = input.followingId;
+  }
+  else {
+    const { followerId: followerIdInput, followingId: followingIdInput } = input;
+
+    const userResults = await db
+      .select({ id: users.id, username: users.username })
+      .from(users)
+      .where(inArray(users.username, [followerIdInput, followingIdInput]));
+
+    const follower = userResults.find((u) => u.username === followerIdInput);
+    const following = userResults.find((u) => u.username === followingIdInput);
+
+    if (!follower || !following) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Takip işlemi için bir veya daha fazla kullanıcı bulunamadı.",
+      });
+    }
+
+    followerId = follower.id;
+    followingId = following.id;
+  }
 
   if (followerId === followingId) {
-    throw new Error("Kullanıcılar kendilerini takip edemez.");
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Kullanıcılar kendilerini takip edemez.",
+    });
   }
 
   const newFollow = await db
@@ -21,24 +52,56 @@ export const followService = async (input: FollowInput) => {
     return { action: "followed", status: "success", data: newFollow[0] };
   }
 
-  await db.delete(follows).where(
-    and(eq(follows.followerId, followerId), eq(follows.followingId, followingId))
-  );
+
+  await db
+    .delete(follows)
+    .where(
+      and(eq(follows.followerId, followerId), eq(follows.followingId, followingId))
+    );
 
   return { action: "unfollowed", status: "success" };
 };
 
-
-
 export const getFollowStatusService = async (input: FollowInput) => {
-  const { followerId, followingId } = input;
+  let followerId: string;
+  let followingId: string;
+
+  if (input.type === "id") {
+    followerId = input.followerId;
+    followingId = input.followingId;
+  } else {
+    const { followerId: followerIdInput, followingId: followingIdInput } = input;
+
+    if (followerIdInput === followingIdInput) {
+        return { isFollowing: false, isCurrentUser: true };
+    }
+
+    const userResults = await db
+      .select({ id: users.id, username: users.username })
+      .from(users)
+      .where(inArray(users.username, [followerIdInput, followingIdInput]));
+
+    const follower = userResults.find((u) => u.username === followerIdInput);
+    const following = userResults.find((u) => u.username === followingIdInput);
+
+    if (!follower || !following) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Durum kontrolü için bir veya daha fazla kullanıcı bulunamadı.",
+      });
+    }
+
+    followerId = follower.id;
+    followingId = following.id;
+  }
 
   if (followerId === followingId) {
     return { isFollowing: false, isCurrentUser: true };
   }
 
-  const isFollowing = await db
-    .select()
+
+  const followRecord = await db
+    .select({ id: follows.followingId })
     .from(follows)
     .where(
       and(
@@ -46,8 +109,9 @@ export const getFollowStatusService = async (input: FollowInput) => {
         eq(follows.followingId, followingId)
       )
     )
+    .limit(1);
 
-  return { isFollowing: isFollowing[0], isCurrentUser: false };
+  return { isFollowing: followRecord.length > 0, isCurrentUser: false };
 };
 
 export const getUserFollowingCounts = async (id: string) => {

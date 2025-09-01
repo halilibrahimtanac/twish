@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CardHeader } from "@/components/ui/card";
@@ -15,6 +16,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { trpc } from "@/app/_trpc/client";
+import { toast } from "sonner";
 
 interface Props {
   viewAuthorName: string;
@@ -32,6 +35,26 @@ const TwishHeader: React.FC<Props> = ({
   twish,
 }) => {
   const { user } = useUserStore();
+  const utils = trpc.useUtils();
+  const { data, isLoading } = trpc.follows.getFollowStatus.useQuery(
+    { followerId: user?.username || "", followingId: twish.authorUsername, type: "name" },
+    { enabled: user?.username !== twish.authorUsername }
+  );
+
+  const toggleFollowMutation = trpc.follows.followRoute.useMutation({
+    onSuccess: () => {
+      utils.follows.getFollowStatus.invalidate();
+    },
+  });
+  const { mutate: deleteTwish } = trpc.twish.deleteTwish.useMutation({
+    onSuccess: () => {
+      utils.twish.invalidate();
+      toast.success("Twish deleted successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete twish");
+    },
+  });
   const avatarUrl =
     twish.type === "retwish"
       ? twish.originalTwish?.authorAvatarUrl
@@ -46,10 +69,12 @@ const TwishHeader: React.FC<Props> = ({
   const handleDelete = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    deleteTwish({ id: twish.id });
   };
   const handleFollow = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    toggleFollowMutation.mutateAsync({ followerId: user?.username || "", followingId: twish.authorUsername, type: "name" });
   };
 
   return (
@@ -122,13 +147,13 @@ const TwishHeader: React.FC<Props> = ({
                     onClick={handleFollow}
                   >
                     <UserPlus className="mr-2 h-4 w-4" />
-                    <span>Follow @{viewAuthorUserName}</span>
+                    <span>{data?.isFollowing ? "Unfollow" : "Follow"} @{viewAuthorUserName}</span>
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onSelect={handleSelect}>
+                {!isAuthor &&<DropdownMenuItem onSelect={handleSelect}>
                   <VolumeX className="mr-2 h-4 w-4" />
                   <span>Mute @{viewAuthorUserName}</span>
-                </DropdownMenuItem>
+                </DropdownMenuItem>}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
