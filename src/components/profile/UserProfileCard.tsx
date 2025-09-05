@@ -26,6 +26,7 @@ import FollowList from "./FollowList";
 import { City } from "@/lib/city-search";
 import { useDebounce } from "use-debounce";
 import ProfileTabs from "./ProfileTabs";
+import FullScreenMedia from "../FullScreenMedia";
 
 export function UserProfileCard({
   id,
@@ -81,6 +82,8 @@ export function UserProfileCard({
   const [suggestions, setSuggestions] = useState<City[]>([]);
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [fullscreen, setFullscreen] = useState(false);
 
   useEffect(() => {
     if (debouncedLocationQuery.length < 2) {
@@ -292,6 +295,7 @@ export function UserProfileCard({
             <div className="relative">
               <Avatar className="h-32 w-32 border-4 border-background">
                 <AvatarImage
+                  onClick={() => setFullscreen(true)}
                   src={profilePictureUrl ?? undefined}
                   alt={`${name}'s profile picture`}
                 />
@@ -517,6 +521,12 @@ export function UserProfileCard({
 
       {/* FollowList */}
       <FollowList id={id || ""} type={followListType} isOpen={followListOpen} onOpenChange={setFollowListOpen}/>
+    
+      {fullscreen && profilePictureUrl && <FullScreenMedia fullscreenMedia={{
+        url: profilePictureUrl,
+        originalName: "",
+        mimeType: "image/"
+      }} closeFullscreen={() => setFullscreen(false)} mediaCount={1} />}
     </div>
   );
 }

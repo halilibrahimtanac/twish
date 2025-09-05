@@ -1,8 +1,8 @@
 import Image from "next/image";
 import { useState, useEffect, useCallback } from "react"; // useCallback eklendi
-import { X, ChevronLeft, ChevronRight } from "lucide-react"; // Navigasyon ikonları eklendi
 import { MediaPreviewItem } from "../TwishCard";
 import { cn } from "@/lib/utils";
+import FullScreenMedia from "@/components/FullScreenMedia";
 
 const MediaPreview = ({ mediaItems }: { mediaItems: MediaPreviewItem[] }) => {
   // State'i artık obje yerine index olarak tutuyoruz. null ise kapalı demek.
@@ -127,72 +127,7 @@ const MediaPreview = ({ mediaItems }: { mediaItems: MediaPreviewItem[] }) => {
 
       {/* Fullscreen Modal */}
       {fullscreenMedia && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4"
-          onClick={closeFullscreen}
-        >
-          {/* Close Button */}
-          <button
-            onClick={closeFullscreen}
-            className="absolute right-4 top-4 z-[51] rounded-full bg-black bg-opacity-30 p-2 text-white transition-all hover:bg-opacity-50"
-          >
-            <X className="h-6 w-6" />
-          </button>
-
-          {/* Navigasyon: Geri Butonu */}
-          {mediaCount > 1 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handlePrev();
-              }}
-              className="absolute left-4 top-1/2 z-[51] -translate-y-1/2 rounded-full bg-black bg-opacity-30 p-2 text-white transition-all hover:bg-opacity-50"
-            >
-              <ChevronLeft className="h-7 w-7" />
-            </button>
-          )}
-
-          {/* Navigasyon: İleri Butonu */}
-          {mediaCount > 1 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleNext();
-              }}
-              className="absolute right-4 top-1/2 z-[51] -translate-y-1/2 rounded-full bg-black bg-opacity-30 p-2 text-white transition-all hover:bg-opacity-50"
-            >
-              <ChevronRight className="h-7 w-7" />
-            </button>
-          )}
-
-          {/* Media Content */}
-          <div
-            className="relative flex h-full w-full items-center justify-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {fullscreenMedia.mimeType.startsWith("image/") ? (
-              <Image
-                src={fullscreenMedia.url}
-                alt={fullscreenMedia.originalName}
-                width={1920}
-                height={1080}
-                className="block h-auto max-h-[95vh] w-auto max-w-[95vw] object-contain"
-              />
-            ) : (
-              <video
-                controls
-                autoPlay
-                className="max-h-[95vh] max-w-[95vw] object-contain"
-              >
-                <source
-                  src={fullscreenMedia.url}
-                  type={fullscreenMedia.mimeType}
-                />
-                Your browser does not support the video tag.
-              </video>
-            )}
-          </div>
-        </div>
+        <FullScreenMedia fullscreenMedia={fullscreenMedia} closeFullscreen={closeFullscreen} mediaCount={mediaCount} handleNext={handleNext} handlePrev={handlePrev} />
       )}
     </>
   );
