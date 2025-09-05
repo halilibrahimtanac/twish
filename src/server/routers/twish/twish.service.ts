@@ -1,7 +1,7 @@
 import db from "@/db";
-import { GetCommentsByTwishIdInput, LikeTwishInput, ReTwishInput, TwishInputType, UpdateTwishMediaPreviewInput } from "./twish.input";
+import { GetCommentsByTwishIdInput, GetFeedTwishes, LikeTwishInput, ReTwishInput, TwishInputType, UpdateTwishMediaPreviewInput } from "./twish.input";
 import { likes, pictures, twishes, users } from "@/db/schema";
-import { and, desc, eq, isNotNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 
 function twishDbQuery() {
@@ -129,13 +129,31 @@ function twishDbQuery() {
     .orderBy(desc(twishes.createdAt));
 }
 
-export async function getFeedTwishes(userId?: string) {
+export async function getFeedTwishes(input: GetFeedTwishes) {
+  const { userId, type } = input;
   const feedTwishes = twishDbQuery();
 
   const conditions = [or(eq(twishes.type, "quote"), eq(twishes.type, "retwish"), eq(twishes.type, "original"))]
   
-    if(userId){
+    if(userId && type !== "likes"){
       conditions.push(eq(twishes.authorId, userId));
+    }
+
+    if(type === "media"){
+      conditions.push(eq(twishes.hasMedia, true))
+    }
+
+    if(type === "likes" && userId) {
+      const likedTwishIds = await db
+        .select({ twishId: likes.twishId })
+        .from(likes)
+        .where(eq(likes.userId, userId));
+      
+      if (likedTwishIds.length === 0) {
+        return [];
+      }
+      
+      conditions.push(inArray(twishes.id, likedTwishIds.map(item => item.twishId)));
     }
 
     feedTwishes.where(and(...conditions));

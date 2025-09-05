@@ -3,7 +3,7 @@ import * as twishService from "./twish.service";
 import { deleteTwishInput, getCommentsByTwishId, getFeedTwishesInput, getSingleTwishInput, likeTwishInput, newTwishInput, reTwishInput, updateTwishMediaPreviewInput } from "./twish.input";
 
 export const twishRouter = router({
-    getAllTwishes: publicProcedure.input(getFeedTwishesInput).query(({ input }) => twishService.getFeedTwishes(input.userId)),
+    getAllTwishes: publicProcedure.input(getFeedTwishesInput).query(({ input }) => twishService.getFeedTwishes(input)),
     newTwish: publicProcedure.input(newTwishInput).mutation(async ({ input }) => twishService.newTwishService(input)),
     likeTwish: publicProcedure.input(likeTwishInput).mutation(async ({ input }) => twishService.likeTwishService(input)),
     reTwish: publicProcedure.input(reTwishInput).mutation(async ({ input }) => twishService.reTwishService(input)),

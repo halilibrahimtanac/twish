@@ -7,8 +7,8 @@ import { QueryStateHandler } from "../QueryStateHandler";
 type TwishContextType = { userId?: string };
 export const TwishContext = createContext<TwishContextType>({});
 
-export default function TwishList({ userIdParam }: { userIdParam?: string }) {
-  const twishes = trpc.twish.getAllTwishes.useQuery({ userId: userIdParam });
+export default function TwishList({ userIdParam, type, emptyMessage }: { userIdParam?: string; type?: string; emptyMessage?: React.ReactNode; }) {
+  const twishes = trpc.twish.getAllTwishes.useQuery({ userId: userIdParam, type });
 
   return (
     <QueryStateHandler query={twishes}>
@@ -21,7 +21,7 @@ export default function TwishList({ userIdParam }: { userIdParam?: string }) {
                   <TwishCard key={twish.id} twish={twish} />
                 ))
               ) : (
-                <p className="text-muted-foreground mt-4">
+                emptyMessage || <p className="text-muted-foreground mt-4">
                   No posts yet. Be the first!
                 </p>
               )}

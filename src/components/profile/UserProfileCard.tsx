@@ -15,7 +15,6 @@ import {
   Video,
 } from "lucide-react";
 import { useState, useRef, ChangeEvent, useEffect } from "react";
-import TwishList from "../twish/TwishList";
 
 import { useWebRTC } from "../WebRTCContext";
 import { useSocket } from "../SocketContext";
@@ -25,7 +24,8 @@ import FollowButton from "./FollowButton";
 import { ImageCropModal } from "./ImageCropModal";
 import FollowList from "./FollowList";
 import { City } from "@/lib/city-search";
-import { useDebounce } from "use-debounce"
+import { useDebounce } from "use-debounce";
+import ProfileTabs from "./ProfileTabs";
 
 export function UserProfileCard({
   id,
@@ -256,7 +256,7 @@ export function UserProfileCard({
 
   return (
     <div className="w-full flex flex-col items-center">
-      <Card className="w-full max-w-2xl border-t-0 rounded-none mx-auto overflow-hidden pt-0">
+      <Card className="w-full max-w-2xl border-t-0 rounded-none mx-auto overflow-hidden pt-0 shadow-none">
         <input
           type="file"
           ref={profilePictureInputRef}
@@ -504,7 +504,7 @@ export function UserProfileCard({
       </Card>
 
       {/* User Twish List */}
-      <TwishList userIdParam={id} />
+      {id && <ProfileTabs userIdParam={id}/>}
 
       {/* Profile Picture Crop Modal */}
       <ImageCropModal

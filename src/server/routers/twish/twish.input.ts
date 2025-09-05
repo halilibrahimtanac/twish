@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 export const getFeedTwishesInput = z.object({
-    userId: z.string().optional()
+    userId: z.string().optional(),
+    type: z.string().optional()
 })
 
 export const newTwishInput = z.object({
