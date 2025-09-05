@@ -155,7 +155,7 @@ export function UserProfileCard({
   };
 
   const handleSave = async () => {
-    const updateObj: SaveUserInputType = { id: id ?? "" };
+    const updateObj: SaveUserInputType = {};
 
     let newProfilePictureUrl =
       profilePictureUrl === initialProfilePictureUrl
@@ -190,7 +190,7 @@ export function UserProfileCard({
       updateObj.bio = bio;
     }
 
-    if (Object.keys(updateObj).length > 1) {
+    if (Object.keys(updateObj).length > 0) {
       await updateUserInfo.mutateAsync(updateObj);
       setUser(
         "profilePictureUrl",

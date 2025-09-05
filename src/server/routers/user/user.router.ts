@@ -1,4 +1,4 @@
-import { publicProcedure, router } from '@/server/trpc';
+import { protectedProcedure, publicProcedure, router } from '@/server/trpc';
 import { addUserInput, loginInput, getUserProfileInfosInput, saveUserInfoInput } from './user.input';
 import * as userService from './user.service';
 
@@ -23,5 +23,5 @@ export const userRouter = router({
     .input(getUserProfileInfosInput)
     .query(({ input }) => userService.getUserProfileInfos(input.id)),
   
-  updateUserInfo: publicProcedure.input(saveUserInfoInput).mutation(async ({ input }) => userService.saveUserInfoService(input))
+  updateUserInfo: protectedProcedure.input(saveUserInfoInput).mutation(async ({ ctx, input }) => userService.saveUserInfoService(ctx.user.id, input))
 });

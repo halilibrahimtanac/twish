@@ -7,8 +7,12 @@ import React from "react";
 
 const Profile: React.FC = () => {
   const { user } = useUserStore();
-  if(!user) throw new Error("User not found");
-  const getUser = trpc.user.getUserProfileInfos.useQuery({ id: user.id });
+
+  const getUser = trpc.user.getUserProfileInfos.useQuery({ id: user?.id || "" });
+
+  if (!user) {
+    return <div>Loading user...</div>; 
+  }
 
   return (
     <QueryStateHandler query={getUser}>

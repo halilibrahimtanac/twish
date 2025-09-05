@@ -6,21 +6,42 @@ import { cn } from "@/lib/utils";
 
 function FollowButton({ followingId }: { followingId: string }) {
   const { user } = useUserStore();
-  if(!user) throw new Error("User not found");
-  const utils = trpc.useUtils();
+
   const [isHovering, setIsHovering] = useState(false);
 
-  const { data, isLoading } = trpc.follows.getFollowStatus.useQuery(
-    { followerId: user.id, followingId },
-    { enabled: !!followingId && user.id !== followingId }
-  );
+  const utils = trpc.useUtils();
 
   const toggleFollowMutation = trpc.follows.followRoute.useMutation({
     onSuccess: () => {
-      utils.follows.getFollowStatus.invalidate();
+      if (user?.id && followingId) {
+        utils.follows.getFollowStatus.invalidate({ followerId: user.id, followingId });
+      }
       utils.follows.userFollowCounts.invalidate();
     },
   });
+
+  const { data, isLoading } = trpc.follows.getFollowStatus.useQuery(
+    { followerId: user?.id ?? "", followingId },
+    {
+      enabled: !!user?.id && !!followingId && user.id !== followingId,
+    }
+  );
+
+  if (!user) {
+    return (
+      <Button
+        variant="outline"
+        className="w-[120px] rounded-xl bg-gray-100 text-gray-500 cursor-wait"
+        disabled
+      >
+        ...
+      </Button>
+    );
+  }
+
+  if (user.id === followingId) {
+    return null;
+  }
 
   if (isLoading || !data) {
     return (
@@ -51,7 +72,8 @@ function FollowButton({ followingId }: { followingId: string }) {
         disabled={toggleFollowMutation.isPending}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
-        className={cn(`w-[120px] rounded-md border transition-all duration-300`,
+        className={cn(
+          `w-[120px] rounded-md border transition-all duration-300`,
           isHovering
             ? "bg-red-500 !text-red-500 border-red-500 shadow-md scale-105"
             : "text-red-500 border-red-400 hover:bg-red-50"

@@ -4,7 +4,7 @@ import { deleteTwishInput, getCommentsByTwishId, getFeedTwishesInput, getSingleT
 
 export const twishRouter = router({
     getAllTwishes: publicProcedure.input(getFeedTwishesInput).query(({ input }) => twishService.getFeedTwishes(input)),
-    newTwish: publicProcedure.input(newTwishInput).mutation(async ({ input }) => twishService.newTwishService(input)),
+    newTwish: protectedProcedure.input(newTwishInput).mutation(async ({ ctx, input }) => twishService.newTwishService(ctx.user.id, input)),
     likeTwish: publicProcedure.input(likeTwishInput).mutation(async ({ input }) => twishService.likeTwishService(input)),
     reTwish: publicProcedure.input(reTwishInput).mutation(async ({ input }) => twishService.reTwishService(input)),
     updateTwishMediaPreview: publicProcedure.input(updateTwishMediaPreviewInput).mutation(async ({ input }) => twishService.updateTwishMediaPreviewService(input)),

@@ -169,25 +169,21 @@ export async function getFeedTwishes(input: GetFeedTwishes) {
   }));
 }
 
-export const newTwishService = async (input: TwishInputType) => {
-  const { content, username, hasMedia, mediaCount } = input;
-  const foundUser = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.username, username));
-  if (foundUser[0]) {
-    return (await db
+export const newTwishService = async (userId: string, input: TwishInputType) => {
+  const { content, hasMedia, mediaCount } = input;
+
+  return (
+    await db
       .insert(twishes)
       .values({
         id: crypto.randomUUID(),
         content,
-        authorId: foundUser[0].id,
+        authorId: userId,
         hasMedia,
-        mediaCount
+        mediaCount,
       })
-      .returning())[0];
-  }
-  throw new Error("User not found");
+      .returning()
+  )[0];
 };
 
 export const likeTwishService = async (input: LikeTwishInput) => {

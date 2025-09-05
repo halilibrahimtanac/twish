@@ -171,7 +171,7 @@ export async function getUserProfileInfos(id: string) {
   return foundUser[0];
 }
 
-export async function saveUserInfoService(input: SaveUserInputType) {
+export async function saveUserInfoService(userId: string, input: SaveUserInputType) {
   const updateData: {
     name?: string;
     bio?: string | null;
@@ -198,7 +198,7 @@ export async function saveUserInfoService(input: SaveUserInputType) {
         id: crypto.randomUUID(),
         type: "profile_picture",
         url: input.profilePictureUrl,
-        uploadedBy: input.id,
+        uploadedBy: userId,
       })
       .returning({ insertedId: pictures.id });
 
@@ -212,7 +212,7 @@ export async function saveUserInfoService(input: SaveUserInputType) {
         id: crypto.randomUUID(),
         type: "background_picture",
         url: input.backgroundPictureUrl,
-        uploadedBy: input.id,
+        uploadedBy: userId,
       })
       .returning({ insertedId: pictures.id });
       
@@ -220,12 +220,12 @@ export async function saveUserInfoService(input: SaveUserInputType) {
   }
 
   if (Object.keys(updateData).length === 0) {
-    return await db.query.users.findFirst({ where: eq(users.id, input.id) });
+    return await db.query.users.findFirst({ where: eq(users.id, userId) });
   }
 
   return await db
     .update(users)
     .set(updateData)
-    .where(eq(users.id, input.id))
+    .where(eq(users.id, userId))
     .returning();
 }

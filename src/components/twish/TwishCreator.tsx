@@ -182,7 +182,6 @@ export function TwishCreator() {
     try {
       const newTwish = await twishMutate({
         content,
-        username: user?.username || "",
         hasMedia: mediaFiles.length > 0,
         mediaCount: mediaFiles.length,
       });

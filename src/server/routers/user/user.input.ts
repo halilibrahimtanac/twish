@@ -21,7 +21,6 @@ export const getUserProfileInfosInput = z.object({
 });
 
 export const saveUserInfoInput = z.object({
-  id: z.string().min(1),
   name: z.string().optional(),
   bio: z.string().optional(),
   profilePictureUrl: z.string().optional(),

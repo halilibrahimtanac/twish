@@ -7,7 +7,6 @@ export const getFeedTwishesInput = z.object({
 
 export const newTwishInput = z.object({
     content: z.string().min(1),
-    username: z.string().min(1),
     hasMedia: z.boolean(),
     mediaCount: z.number()
 });
