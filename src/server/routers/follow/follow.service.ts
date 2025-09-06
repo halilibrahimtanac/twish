@@ -115,41 +115,25 @@ export const getFollowStatusService = async (input: FollowInput) => {
 };
 
 export const getUserFollowingCounts = async (id: string) => {
-  const followerCounts = db.$with("follower_counts").as(
-    db.select({
-      followingId: follows.followingId,
-      followerCount: sql<number>`count(${follows.followingId})`.as("followerCount")
-    })
-    .from(follows)
-    .leftJoin(users, or(eq(users.id, id), eq(users.username, id)))
-    .where(eq(follows.followingId, users.id))
-    .groupBy(follows.followingId)
-  );
-  
-  const followingCounts = db.$with("following_counts").as(
-    db.select({
-      followerId: follows.followerId,
-      followingCount: sql<number>`count(${follows.followerId})`.as("followingCount")
-    })
-    .from(follows)
-    .leftJoin(users, or(eq(users.id, id), eq(users.username, id)))
-    .where(eq(follows.followerId, users.id))
-    .groupBy(follows.followerId)
-  );
-  
-  const foundUser = await db.with(followerCounts, followingCounts)
+  const result = await db
     .select({
-      followerCount: sql<number>`COALESCE(${followerCounts.followerCount}, 0)`,
-      followingCount: sql<number>`COALESCE(${followingCounts.followingCount}, 0)`
+      followerCount: sql<number>`COALESCE((
+        SELECT COUNT(*) 
+        FROM ${follows} 
+        WHERE ${follows.followingId} = ${users.id}
+      ), 0)`,
+      followingCount: sql<number>`COALESCE((
+        SELECT COUNT(*) 
+        FROM ${follows} 
+        WHERE ${follows.followerId} = ${users.id}
+      ), 0)`
     })
     .from(users)
-    .leftJoin(followerCounts, eq(followerCounts.followingId, users.id))
-    .leftJoin(followingCounts, eq(followingCounts.followerId, users.id))
     .where(or(eq(users.id, id), eq(users.username, id)))
     .limit(1);
 
-  return foundUser[0];
-}
+  return result[0] || { followerCount: 0, followingCount: 0 };
+};
 
 export const getFollowerOrFollowingList = async (
   input: FollowerOrFollowingList
