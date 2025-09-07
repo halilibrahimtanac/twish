@@ -17,7 +17,8 @@ export const loginInput = z.object({
 });
 
 export const getUserProfileInfosInput = z.object({
-  id: z.string().min(1)
+  id: z.string().min(1),
+  field: z.enum(["id", "name", "username"]).optional()
 });
 
 export const saveUserInfoInput = z.object({

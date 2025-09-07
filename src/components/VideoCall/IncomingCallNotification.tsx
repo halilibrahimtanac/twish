@@ -1,13 +1,13 @@
 'use client';
 
 import { Phone, PhoneOff } from 'lucide-react';
-import { CallUserType, useWebRTC } from '../WebRTCContext';
+import { CallingUserInfoType, useWebRTC } from '../WebRTCContext';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
-export const IncomingCallNotification = ({ callingUserInfo }: { callingUserInfo?: CallUserType }) => {
+export const IncomingCallNotification = ({ callingUserInfo }: { callingUserInfo?: CallingUserInfoType }) => {
   const { incomingCall, answerCall, rejectCall, cancelCall } = useWebRTC();
 
   if (!incomingCall && !callingUserInfo) return null;

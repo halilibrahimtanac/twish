@@ -5,6 +5,7 @@ import { PhoneOff, User } from 'lucide-react';
 import { useWebRTC } from '../WebRTCContext';
 import { Button } from '../ui/button';
 import { useUserStore } from '@/lib/store/user.store';
+import { trpc } from '@/app/_trpc/client';
 
 const formatTime = (totalSeconds: number) => {
   const hours = Math.floor(totalSeconds / 3600);
@@ -23,6 +24,8 @@ const formatTime = (totalSeconds: number) => {
 
 export const VideoCallModal = () => {
   const { user } = useUserStore();
+  const utils = trpc.useUtils();
+  const [username, setUsername] = useState("");
   const { localStream, remoteStream, endCall, answeredCallUserId, callingUserInfo } = useWebRTC();
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -46,12 +49,19 @@ export const VideoCallModal = () => {
       setElapsedTime(prevTime => prevTime + 1);
     }, 1000);
 
+    if(!callingUserInfo?.username && answeredCallUserId){
+      utils.user.getUserProfileInfos.fetch({ id: answeredCallUserId, field: "username" })
+      .then((res) => {
+        setUsername(res.username);
+      })
+    }
+
     return () => {
       clearInterval(timerInterval);
     };
   }, []);
 
-  const remoteUserName = callingUserInfo?.username || 'Guest';
+  const remoteUserName = callingUserInfo?.username || username;
 
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center p-4">

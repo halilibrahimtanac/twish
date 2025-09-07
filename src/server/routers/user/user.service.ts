@@ -3,7 +3,7 @@ import { follows, pictures, users, type User } from "@/db/schema";
 import { eq, or, sql } from "drizzle-orm";
 import { hashPassword, comparePassword } from "@/lib/password";
 import { createAndSetSession } from "@/lib/auth";
-import type { AddUserInput, LoginInput, SaveUserInputType } from "./user.input";
+import type { AddUserInput, GetUserProfileInfosInput, LoginInput, SaveUserInputType } from "./user.input";
 import { cookies } from "next/headers";
 import { alias } from "drizzle-orm/sqlite-core";
 
@@ -121,10 +121,29 @@ export async function logoutUser() {
   return { success: true };
 }
 
-export async function getUserProfileInfos(id: string) {
+export async function getUserProfileInfos(input: GetUserProfileInfosInput) {
+  const ALLOWED_SINGLE_FIELDS = ["name", "username", "id"] as const;
+  const { id, field } = input;
+
+  if (field) {
+    if (!(ALLOWED_SINGLE_FIELDS as readonly string[]).includes(field)) {
+      throw new Error(`Invalid or unauthorized field requested: ${field}`);
+    }
+
+    const foundUser = await db
+      .select({
+        [field]: users[field],
+      })
+      .from(users)
+      .where(or(eq(users.id, id), eq(users.username, id)))
+      .limit(1);
+
+    return foundUser[0];
+  }
+
   const profilePics = alias(pictures, "profile_pics");
   const backgroundPics = alias(pictures, "background_pics");
-
+  
   const followerCounts = db.$with("follower_counts").as(
     db.select({
       followingId: follows.followingId,
@@ -149,16 +168,16 @@ export async function getUserProfileInfos(id: string) {
   
   const foundUser = await db.with(followerCounts, followingCounts)
     .select({
-      id: users.id,
-      email: users.email,
-      name: users.name,
-      bio: users.bio,
-      username: users.username,
-      profilePictureUrl: profilePics.url,
-      backgroundPictureUrl: backgroundPics.url,
-      location: users.location,
-      followerCount: sql<number>`COALESCE(${followerCounts.followerCount}, 0)`,
-      followingCount: sql<number>`COALESCE(${followingCounts.followingCount}, 0)`
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        bio: users.bio,
+        username: users.username,
+        profilePictureUrl: profilePics.url,
+        backgroundPictureUrl: backgroundPics.url,
+        location: users.location,
+        followerCount: sql<number>`COALESCE(${followerCounts.followerCount}, 0)`,
+        followingCount: sql<number>`COALESCE(${followingCounts.followingCount}, 0)`
     })
     .from(users)
     .leftJoin(profilePics, eq(users.profilePictureId, profilePics.id))

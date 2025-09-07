@@ -17,6 +17,8 @@ export type CallUserType = {
     backgroundPictureUrl: string | null;
 }
 
+export type CallingUserInfoType = { [x: string]: string; } | CallUserType | null;
+
 interface IWebRTCContext {
   localStream: MediaStream | null;
   remoteStream: MediaStream | null;
@@ -25,7 +27,7 @@ interface IWebRTCContext {
   isCalling: boolean;
   incomingCall: { from: string; signal: any; foundUser: CallUserType } | null;
   answeredCallUserId: string | null;
-  callingUserInfo: CallUserType | null;
+  callingUserInfo: CallingUserInfoType;
   startCall: (targetUserId: string) => void;
   answerCall: () => void;
   rejectCall: () => void;
@@ -54,7 +56,7 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
   const [isGettingMedia, setIsGettingMedia] = useState(false);
   const [isCalling, setIsCalling] = useState(false);
   const [answeredCallUserId, setAnsweredCallUserId] = useState<string | null>(null);
-  const [callingUserInfo, setCallingUserInfo] = useState<CallUserType | null>(null);
+  const [callingUserInfo, setCallingUserInfo] = useState<CallingUserInfoType>(null);
   const peerRef = useRef<Peer.Instance | null>(null);
 
   const utils = trpc.useUtils();

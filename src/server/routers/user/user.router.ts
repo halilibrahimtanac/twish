@@ -21,7 +21,7 @@ export const userRouter = router({
 
   getUserProfileInfos: publicProcedure
     .input(getUserProfileInfosInput)
-    .query(({ input }) => userService.getUserProfileInfos(input.id)),
+    .query(({ input }) => userService.getUserProfileInfos(input)),
   
   updateUserInfo: protectedProcedure.input(saveUserInfoInput).mutation(async ({ ctx, input }) => userService.saveUserInfoService(ctx.user.id, input))
 });
