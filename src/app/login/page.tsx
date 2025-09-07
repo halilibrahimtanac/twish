@@ -85,7 +85,6 @@ export default function LoginPage() {
               alt="Twish Logo"
               width={180}
               height={105}
-              priority
             />
           </div>
           <CardTitle className="text-2xl">Giriş Yap</CardTitle>
