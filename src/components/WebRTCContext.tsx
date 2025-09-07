@@ -28,6 +28,7 @@ interface IWebRTCContext {
   incomingCall: { from: string; signal: any; foundUser: CallUserType } | null;
   answeredCallUserId: string | null;
   callingUserInfo: CallingUserInfoType;
+  isUserBusy: string;
   startCall: (targetUserId: string) => void;
   answerCall: () => void;
   rejectCall: () => void;
@@ -57,6 +58,7 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
   const [isCalling, setIsCalling] = useState(false);
   const [answeredCallUserId, setAnsweredCallUserId] = useState<string | null>(null);
   const [callingUserInfo, setCallingUserInfo] = useState<CallingUserInfoType>(null);
+  const [isUserBusy, setIsUserBusy] = useState("");
   const peerRef = useRef<Peer.Instance | null>(null);
 
   const utils = trpc.useUtils();
@@ -91,6 +93,15 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
       cleanUp();
       setIsCalling(false);
       setIncomingCall(null);
+    })
+
+    socket.on("user-is-busy", () => {
+      setIsUserBusy("This user is in another call right now...");
+      setTimeout(() => {
+        cleanUp();
+        setIsCalling(false);
+        setIsUserBusy("");
+      }, 2000)
     })
 
     return () => {
@@ -251,6 +262,7 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
     incomingCall,
     answeredCallUserId,
     callingUserInfo,
+    isUserBusy,
     startCall,
     answerCall,
     rejectCall,
