@@ -41,7 +41,7 @@ export const IncomingCallNotification = ({ callingUserInfo }: { callingUserInfo?
           </div>
         </CardHeader>
         <CardContent className="py-2 px-4 text-center">
-          <p className="text-lg font-medium text-gray-700">{isUserBusy ?? callingUserInfo ? "calling..." : "is calling you..."}</p>
+          <p className="text-lg font-medium text-gray-700">{isUserBusy ?? (callingUserInfo ? "calling..." : "is calling you...")}</p>
         </CardContent>
         <CardFooter className={cn("flex p-4 bg-gray-50 border-t", callingUserInfo ? "justify-center" : "justify-between")}>
           <Button

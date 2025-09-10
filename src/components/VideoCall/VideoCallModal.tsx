@@ -6,6 +6,8 @@ import { useWebRTC } from '../WebRTCContext';
 import { Button } from '../ui/button';
 import { useUserStore } from '@/lib/store/user.store';
 import { trpc } from '@/app/_trpc/client';
+import { useAudioActivity } from '@/lib/hooks/useAudioActivity';
+import { cn } from '@/lib/utils';
 
 const formatTime = (totalSeconds: number) => {
   const hours = Math.floor(totalSeconds / 3600);
@@ -31,6 +33,9 @@ export const VideoCallModal = () => {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   
   const [elapsedTime, setElapsedTime] = useState(0);
+
+  const isRemoteUserSpeaking = useAudioActivity(remoteStream);
+  const isLocalUserSpeaking = useAudioActivity(localStream);
 
   useEffect(() => {
     if (localVideoRef.current && localStream) {
@@ -59,7 +64,10 @@ export const VideoCallModal = () => {
     return () => {
       clearInterval(timerInterval);
     };
-  }, []);
+  }, [answeredCallUserId, callingUserInfo]);
+
+
+  const targetUserId = answeredCallUserId || callingUserInfo?.id || "";
 
   const remoteUserName = callingUserInfo?.username || username;
 
@@ -67,7 +75,10 @@ export const VideoCallModal = () => {
     <div className="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center p-4">
       <div className="relative w-full h-full max-w-4xl max-h-[80vh] grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Remote Video */}
-        <div className="relative w-full h-full bg-gray-900 rounded-lg overflow-hidden flex items-center justify-center">
+        <div className={cn(
+          "relative w-full h-full bg-gray-900 rounded-lg overflow-hidden flex items-center justify-center transition-all duration-300",
+          isRemoteUserSpeaking && "ring-4 ring-green-500 shadow-lg shadow-green-500/50" // YENİ: Highlight efekti
+        )}>
           <video
             ref={remoteVideoRef}
             autoPlay
@@ -85,7 +96,10 @@ export const VideoCallModal = () => {
           </div>
         </div>
 
-        <div className="absolute w-48 h-32 bottom-5 right-5 md:relative md:w-full md:h-full md:bottom-0 md:right-0 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-600">
+        <div className={cn(
+            "absolute w-48 h-32 bottom-5 right-5 md:relative md:w-full md:h-full md:bottom-0 md:right-0 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-600 transition-all duration-300",
+            isLocalUserSpeaking && "ring-4 ring-blue-500 shadow-lg shadow-blue-500/50" // YENİ: Local kullanıcı için highlight
+        )}>
            <div className="relative w-full h-full">
             <video
               ref={localVideoRef}
@@ -109,7 +123,7 @@ export const VideoCallModal = () => {
         <Button 
           variant="destructive" 
           size="lg" 
-          onClick={() => endCall(answeredCallUserId || "")}
+          onClick={() => endCall(targetUserId)}
           className="rounded-full w-16 h-16"
         >
             <PhoneOff className="h-6 w-6"/>

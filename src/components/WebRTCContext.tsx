@@ -101,7 +101,7 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
         cleanUp();
         setIsCalling(false);
         setIsUserBusy("");
-      }, 2000)
+      }, 3000)
     })
 
     return () => {
@@ -238,7 +238,7 @@ export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
 
   const endCall = (targetUserId: string) => {
     if(socket) {
-        socket.emit('end-call', { targetUserId });
+        socket.emit('end-call', { userId: user?.id, targetUserId });
     }
     cleanUp();
     setIsCalling(false);
