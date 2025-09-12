@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { User, useUserStore } from "@/lib/store/user.store";
+import { User } from "@/lib/store/user.store";
 import { cn, formatCityName, initials } from "@/lib/utils";
 import { SaveUserInputType } from "@/server/routers/user/user.input";
 import {
@@ -27,6 +27,7 @@ import { City } from "@/lib/city-search";
 import { useDebounce } from "use-debounce";
 import ProfileTabs from "./ProfileTabs";
 import FullScreenMedia from "../FullScreenMedia";
+import { useSession } from "next-auth/react";
 
 export function UserProfileCard({
   id,
@@ -38,10 +39,27 @@ export function UserProfileCard({
   location: initialLocation,
   canEdit = false
 }: Partial<User & { canEdit: boolean; followerCount: number; followingCount: number; }>) {
-  const { setUser } = useUserStore();
+  const { update: updateSession } = useSession();
+  const utils = trpc.useUtils();
   const updateUserInfo = trpc.user.updateUserInfo.useMutation({
-    onSuccess: (data) => {
-      console.log("saved: ", data);
+    onSuccess: async (data) => {
+      await utils.user.getUserProfileInfos.invalidate();
+    
+      const updateObj: { profilePictureUrl?: string; backgroundPictureUrl?: string } = {};
+    
+      if (!Array.isArray(data)) {
+        if (data?.profilePictureId) {
+          updateObj.profilePictureUrl = `/uploads/${id}/${data.profilePictureId}`;
+        }
+        if (data?.backgroundPictureId) {
+          updateObj.backgroundPictureUrl = `/uploads/${id}/${data.backgroundPictureId}`;
+        }
+      }
+    
+      await updateSession(updateObj);
+    },
+    onError: (error) => {
+      console.error("Update failed:", error);
     },
   });
   const { data, isPending } = trpc.follows.userFollowCounts.useQuery({ id: id || "" });
@@ -192,14 +210,6 @@ export function UserProfileCard({
 
     if (Object.keys(updateObj).length > 0) {
       await updateUserInfo.mutateAsync(updateObj);
-      setUser(
-        "profilePictureUrl",
-        newProfilePictureUrl || initialProfilePictureUrl
-      );
-      setUser(
-        "backgroundPictureUrl",
-        newBackgroundPictureUrl || initialBackgroundPictureUrl
-      );
     }
 
     setIsEditing(false);
