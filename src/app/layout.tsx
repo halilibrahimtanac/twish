@@ -5,6 +5,7 @@ import { TRPCProvider } from "./_trpc/Provider";
 import { Toaster } from "sonner";
 import { SocketProvider } from "@/components/SocketContext";
 import { WebRTCProvider } from "@/components/WebRTCContext";
+import SessionWrapper from "@/components/SessionWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,9 +33,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <TRPCProvider>
-          <SocketProvider>
-            <WebRTCProvider>{children}</WebRTCProvider>
-          </SocketProvider>
+          <SessionWrapper>
+            <SocketProvider>
+              <WebRTCProvider>{children}</WebRTCProvider>
+            </SocketProvider>
+          </SessionWrapper>
         </TRPCProvider>
         <Toaster />
       </body>

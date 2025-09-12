@@ -7,7 +7,6 @@ import { dateStringConverter } from "@/lib/utils";
 import { MoreHorizontal, Trash2, UserPlus, VolumeX } from "lucide-react";
 import React from "react";
 import { TwishData } from "../TwishCard";
-import { useUserStore } from "@/lib/store/user.store";
 import Link from "next/link";
 import {
   DropdownMenu,
@@ -18,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { trpc } from "@/app/_trpc/client";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
 interface Props {
   viewAuthorName: string;
@@ -34,7 +34,8 @@ const TwishHeader: React.FC<Props> = ({
   viewCreatedAt,
   twish,
 }) => {
-  const { user } = useUserStore();
+  const { data:sessionData } = useSession();
+  const user = sessionData?.user;
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.follows.getFollowStatus.useQuery(
     { followerId: user?.username || "", followingId: twish.authorUsername, type: "name" },

@@ -1,11 +1,12 @@
 import { trpc } from "@/app/_trpc/client";
 import { Button } from "../ui/button";
-import { useUserStore } from "@/lib/store/user.store";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useSession } from "next-auth/react";
 
 function FollowButton({ followingId }: { followingId: string }) {
-  const { user } = useUserStore();
+  const { data:sessionData } = useSession();
+  const user = sessionData?.user;
 
   const [isHovering, setIsHovering] = useState(false);
 

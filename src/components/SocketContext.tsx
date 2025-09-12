@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@/app/_trpc/client';
-import { useUserStore } from '@/lib/store/user.store';
+import { useSession } from 'next-auth/react';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import io, { Socket } from 'socket.io-client';
 
@@ -17,7 +17,8 @@ export const useSocket = () => {
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
-  const { user } = useUserStore();
+  const { data } = useSession();
+  const user = data?.user;
   const utils = trpc.useUtils();
   useEffect(() => {
     if (user?.id) {

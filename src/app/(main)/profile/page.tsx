@@ -2,11 +2,12 @@
 import { trpc } from "@/app/_trpc/client";
 import { QueryStateHandler } from "@/components/QueryStateHandler";
 import { UserProfileCard } from "@/components/profile/UserProfileCard";
-import { useUserStore } from "@/lib/store/user.store";
+import { useSession } from "next-auth/react";
 import React from "react";
 
 const Profile: React.FC = () => {
-  const { user } = useUserStore();
+  const { data } = useSession();
+  const user = data?.user;
 
   const getUser = trpc.user.getUserProfileInfos.useQuery({ id: user?.id || "" });
 

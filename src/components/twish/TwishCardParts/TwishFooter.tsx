@@ -5,9 +5,9 @@ import { cn, createMutationOptions } from "@/lib/utils";
 import { Heart, MessageCircle, Repeat } from "lucide-react";
 import { TwishData } from "../TwishCard";
 import { trpc } from "@/app/_trpc/client";
-import { useUserStore } from "@/lib/store/user.store";
 import { TooltipIconButton } from "@/components/ui/tooltip-icon-button";
 import { RetwishModal } from "../RetwishModal";
+import { useSession } from "next-auth/react";
 
 interface Props {
   twish: TwishData;
@@ -17,7 +17,8 @@ const TwishFooter: React.FC<Props> = ({ twish }) => {
   const [isRetwishModalOpen, setIsRetwishModalOpen] = useState(false);
   const [isComment, setIsComment] = useState(false);
   const utils = trpc.useUtils();
-  const { user } = useUserStore();
+  const { data } = useSession();
+  const user = data?.user;
 
   const likeTwish = trpc.twish.likeTwish.useMutation(
     createMutationOptions({

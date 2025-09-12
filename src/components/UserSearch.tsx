@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-
 import {
   Card,
   CardContent,
@@ -12,10 +11,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useDebounce } from "use-debounce";
 import { SearchInput } from "./ui/search.input";
 import { trpc } from "@/app/_trpc/client";
-import { useUserStore } from "@/lib/store/user.store";
+import { useSession } from "next-auth/react";
 
 export function UserSearch() {
-  const { user } = useUserStore();
+  const { data } = useSession();
+  const user = data?.user;
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   

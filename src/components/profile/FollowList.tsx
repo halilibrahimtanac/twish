@@ -11,7 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { Button } from '../ui/button';
-import { useUserStore } from '@/lib/store/user.store';
+import { useSession } from 'next-auth/react';
 
 type FollowUser = {
     id: string | null;
@@ -29,7 +29,8 @@ interface FollowListProps {
 }
 
 const FollowList: React.FC<FollowListProps> = ({ id, type, isOpen, onOpenChange }) => {
-  const { user } = useUserStore(); 
+  const { data } = useSession();
+  const user = data?.user;
 
   const utils = trpc.useUtils();
   const getFollowerOrFollowingList = trpc.follows.getFollowerOrFollowingList.useQuery(

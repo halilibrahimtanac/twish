@@ -3,16 +3,16 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-
 import { cn } from "@/lib/utils";
 import { NavigationMenuLink } from "@/components/ui/navigation-menu";
 import { UserNav } from "./user-nav";
 import { UserSearch } from "../UserSearch";
 import { Button } from "../ui/button";
-import { useUserStore } from "@/lib/store/user.store";
+import { useSession } from "next-auth/react";
 
 export function Navbar() {
-  const { user } = useUserStore();
+  const { data } = useSession();
+  const user = data?.user;
 
   return (
     <header className="px-4 sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

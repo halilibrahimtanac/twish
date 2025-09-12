@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import { PhoneOff, User } from 'lucide-react';
 import { useWebRTC } from '../WebRTCContext';
 import { Button } from '../ui/button';
-import { useUserStore } from '@/lib/store/user.store';
 import { trpc } from '@/app/_trpc/client';
 import { useAudioActivity } from '@/lib/hooks/useAudioActivity';
 import { cn } from '@/lib/utils';
+import { useSession } from 'next-auth/react';
 
 const formatTime = (totalSeconds: number) => {
   const hours = Math.floor(totalSeconds / 3600);
@@ -25,7 +25,8 @@ const formatTime = (totalSeconds: number) => {
 
 
 export const VideoCallModal = () => {
-  const { user } = useUserStore();
+  const { data } = useSession();
+  const user = data?.user;
   const utils = trpc.useUtils();
   const [username, setUsername] = useState("");
   const { localStream, remoteStream, endCall, answeredCallUserId, callingUserInfo } = useWebRTC();

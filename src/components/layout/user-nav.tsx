@@ -11,18 +11,18 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useUserStore } from "@/lib/store/user.store";
 import { initials } from "@/lib/utils";
+import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-
 export function UserNav() {
-  const { user, clearUser } = useUserStore();
+  const { data } = useSession();
+  const user = data?.user;
   const router = useRouter();
 
   const logout = trpc.user.logout.useMutation({
-    onSuccess: () => {
-      clearUser();
+    onSuccess: async () => {
+      await signOut();
       router.push("/login");
     },
     onError: (error) => {

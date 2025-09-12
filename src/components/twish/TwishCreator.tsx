@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { cn, initials } from "@/lib/utils";
 import { toast } from "sonner";
-import { useUserStore } from "@/lib/store/user.store";
 import { trpc } from "@/app/_trpc/client";
 import { AvatarImage } from "@radix-ui/react-avatar";
 import { Textarea } from "../ui/textarea";
 import { ImageIcon, Video, X, Play } from "lucide-react";
 import { useSocket } from "../SocketContext";
+import { useSession } from "next-auth/react";
 
 interface MediaFile {
   file: File;
@@ -34,7 +34,8 @@ export const renderHighlightedText = (text: string) => {
 };
 
 export function TwishCreator() {
-  const { user } = useUserStore();
+  const { data } = useSession();
+  const user = data?.user;
   const { socket } = useSocket();
   const [content, setContent] = useState("");
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);

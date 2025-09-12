@@ -11,17 +11,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
-import { trpc } from "../_trpc/client";
-import { useUserStore } from "@/lib/store/user.store";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { LoginInput, loginInput } from "@/server/routers/user/user.input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormInput } from "@/components/ui/form-input";
 import { Loader2 } from "lucide-react";
+import { signIn } from "next-auth/react";
+import { useState } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setUserObject } = useUserStore();
+  const [isLoading, setIsLoading] = useState(false);
 
   const {
     register,
@@ -36,7 +36,7 @@ export default function LoginPage() {
     },
   });
 
-  const login = trpc.user.login.useMutation({
+  /* const login = trpc.user.login.useMutation({
     onSuccess: (res) => {
       setUserObject({
         ...res.user,
@@ -65,13 +65,39 @@ export default function LoginPage() {
         });
       }
     },
-  });
+  }); */
 
   const onSubmit: SubmitHandler<LoginInput> = async (formData) => {
     try {
-      await login.mutateAsync(formData);
+      setIsLoading(true);
+      const result = await signIn("credentials", {
+        redirect: false,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (result?.error) {
+        console.error(result.error);
+        setError("email", {
+          type: "manual",
+          message: "Email veya şifre hatalı.",
+        });
+        setError("password", {
+          type: "manual",
+          message: "Email veya şifre hatalı.",
+        });
+        return;
+      }
+
+ 
+      router.push("/home");
+      router.refresh();
+
     } catch (error) {
       console.log(error);
+      setError("root", { message: "Beklenmedik bir hata oluştu." });
+    }finally{
+      setIsLoading(false);
     }
   };
 
@@ -117,9 +143,9 @@ export default function LoginPage() {
             <Button
               type="submit"
               className="w-full"
-              disabled={login.isPending || isSubmitting}
+              disabled={isLoading || isSubmitting}
             >
-              {login.isPending ? (
+              {isLoading ? (
                 <span className="flex items-center justify-center">
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Giriş yapılıyor...

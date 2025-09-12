@@ -13,10 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TwishData } from "./TwishCard";
 import { trpc } from "@/app/_trpc/client";
-import { useUserStore } from "@/lib/store/user.store";
 import EmbeddedTwish from "./EmbeddedTwish";
 import { createMutationOptions, cn } from "@/lib/utils";
 import { Image, Video, X, Play } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 interface MediaFile {
   file: File;
@@ -45,7 +45,8 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
   const videoInputRef = useRef<HTMLInputElement>(null);
   const videoRefs = useRef<{ [key: number]: HTMLVideoElement | null }>({});
 
-  const { user } = useUserStore();
+  const { data } = useSession();
+  const user = data?.user;
   const utils = trpc.useUtils();
 
   const MAX_CHARACTERS = 280;

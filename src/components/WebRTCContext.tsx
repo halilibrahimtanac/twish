@@ -4,8 +4,8 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import Peer from 'simple-peer';
 import { useSocket } from './SocketContext';
-import { useUserStore } from '@/lib/store/user.store';
 import { trpc } from '@/app/_trpc/client';
+import { useSession } from 'next-auth/react';
 
 export type CallUserType = {
     id: string;
@@ -48,7 +48,8 @@ export const useWebRTC = () => {
 
 export const WebRTCProvider = ({ children }: { children: React.ReactNode }) => {
   const { socket } = useSocket();
-  const { user } = useUserStore();
+  const { data } = useSession();
+  const user = data?.user;
 
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);

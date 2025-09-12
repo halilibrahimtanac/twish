@@ -1,38 +1,20 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { initTRPC, TRPCError } from "@trpc/server";
-import { jwtVerify } from "jose";
-import { cookies } from "next/headers";
-
-interface UserPayload {
-  userId: string;
-  email: string;
-  username: string;
-}
+import { getServerSession } from "next-auth";
 
 export const createContext = async () => {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("session-token-twish")?.value;
+    const session = await getServerSession(authOptions);
 
-    if (!token) {
+    if (!session) {
       return { user: null };
     }
 
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    if (!secret) {
-      throw new Error("JWT_SECRET environment variable is not set.");
-    }
-
-    const { payload } = await jwtVerify<UserPayload>(token, secret);
-
     return {
-      user: {
-        id: payload.userId,
-        email: payload.email,
-        username: payload.username,
-      },
-    };
+      user: session.user
+    }
   } catch (error: any) {
     return { user: null };
   }
