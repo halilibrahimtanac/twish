@@ -23,7 +23,7 @@ export function UserSearch() {
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const { data: users, isLoading } = trpc.search.searchUser.useQuery(
-    { query: debouncedQuery, currentUserId: user?.id || "" },
+    { query: debouncedQuery },
     {
       enabled: debouncedQuery.length >= 2 && isFocused && !!user,
     }

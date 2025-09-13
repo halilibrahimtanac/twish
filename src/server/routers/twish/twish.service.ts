@@ -4,7 +4,7 @@ import { likes, pictures, twishes, users } from "@/db/schema";
 import { and, desc, eq, isNotNull, or, SQL, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 
-function twishDbQuery() {
+export function twishDbQuery() {
 
   const replyCounts = db.$with("reply_counts").as(
     db.select({

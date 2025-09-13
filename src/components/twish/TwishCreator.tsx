@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { Textarea } from "../ui/textarea";
 import { ImageIcon, Video, X, Play } from "lucide-react";
 import { useSocket } from "../SocketContext";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 
 interface MediaFile {
   file: File;
@@ -25,11 +26,13 @@ export const renderHighlightedText = (text: string) => {
 
   return parts.map((part, index) =>
     hashtagRegex.test(part) ? (
-      <span key={index} className="text-blue-500">
+      <Link onClick={(e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => e.stopPropagation()} href={`/twish-search?query=${part.replace("#", "")}&type=tag`} key={index}>
+      <span className="text-blue-500 pointer-events-auto cursor-pointer hover:underline">
         {part}
       </span>
+    </Link>
     ) : (
-      part)
+      <React.Fragment key={index}>{part}</React.Fragment>)
   );
 };
 
