@@ -3,6 +3,8 @@ import { follows, pictures, users } from "@/db/schema";
 import { and, eq, like, not, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 import { SearchTwishInput } from "./search.input";
+import { twishes } from "@/db/schema";
+import { twishDbQuery } from "../twish/twish.service";
 
 export async function searchUsers(query: string, currentUserId: string) {
   if (query.trim().length < 2) {
@@ -65,5 +67,47 @@ export async function searchUsers(query: string, currentUserId: string) {
 export async function searchTwishes(input: SearchTwishInput){
   const { query, type } = input;
 
-  return { query, type }
+  if (query.trim().length < 2) {
+    return [];
+  }
+
+  const queryBuilder = twishDbQuery();
+  
+  const lowerCaseQuery = query.toLowerCase();
+  const containsQuery = `%${lowerCaseQuery}%`;
+  
+  const baseConditions = [
+    or(
+      eq(twishes.type, "quote"), 
+      eq(twishes.type, "retwish"), 
+      eq(twishes.type, "original")
+    )!
+  ];
+
+  let searchCondition;
+  
+  if (type === "tag") {
+    const hashtagQuery = `%#${lowerCaseQuery}%`;
+    searchCondition = like(sql`lower(${twishes.content})`, hashtagQuery);
+  } else {
+    searchCondition = like(sql`lower(${twishes.content})`, containsQuery);
+  }
+
+  const result = await queryBuilder
+    .where(and(...baseConditions, searchCondition))
+    .limit(20);
+
+  return result.map(tw => ({
+    ...tw,
+    likedByUserIds: tw.likedByUserIds || [],
+    retwishedByUserIds: tw.retwishedByUserIds || [],
+    originalLikedByUserIds: tw.originalLikedByUserIds || [],
+    originalRetwishedByUserIds: tw.originalRetwishedByUserIds || [],
+    originalQuotedTwish: {
+      ...tw.originalQuotedTwish, 
+      mediaPreview: tw.originalQuotedTwish.mediaPreview ? 
+        JSON.parse(tw.originalQuotedTwish.mediaPreview) : null 
+    },
+    mediaPreview: tw.mediaPreview ? JSON.parse(tw.mediaPreview) : null
+  }));
 }
