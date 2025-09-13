@@ -41,6 +41,7 @@ export const createMutationOptions = ({
 }: MutationOptionsConfig) => ({
   onSuccess: () => {
     utils.twish.invalidate();
+    utils.search.invalidate();
 
     onSuccessCallback?.();
   },

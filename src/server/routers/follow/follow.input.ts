@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 export const followInput = z.object({
-    followerId: z.string().min(1),
     followingId: z.string().min(1),
     type: z.enum(["id", "name"]).default("id")
 });
@@ -12,8 +11,7 @@ export const userFollowCountInput = z.object({
 
 export const followerOrFollowingListInput = z.object({
     id: z.string().min(1),
-    type: z.enum(["follower", "following"]),
-    userId: z.string().min(1)
+    type: z.enum(["follower", "following"])
 })
 
 export type FollowInput = z.infer<typeof followInput>;

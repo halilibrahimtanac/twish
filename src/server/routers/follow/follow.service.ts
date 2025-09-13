@@ -1,28 +1,26 @@
 import db from "@/db";
-import { FollowerOrFollowingList, FollowInput } from "./follow.input";
+import { FollowerOrFollowingList } from "./follow.input";
 import { and, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 import { follows, pictures, users } from "@/db/schema";
 import { alias } from "drizzle-orm/sqlite-core";
 import { TRPCError } from "@trpc/server";
 
-export const followService = async (input: FollowInput) => {
+export const followService = async (typeParam: string, followingIdParam: string, followerIdParam: string) => {
   let followerId: string;
   let followingId: string;
 
-  if (input.type === "id") {
-    followerId = input.followerId;
-    followingId = input.followingId;
+  if (typeParam === "id") {
+    followerId = followerIdParam;
+    followingId = followingIdParam;
   }
   else {
-    const { followerId: followerIdInput, followingId: followingIdInput } = input;
-
     const userResults = await db
       .select({ id: users.id, username: users.username })
       .from(users)
-      .where(inArray(users.username, [followerIdInput, followingIdInput]));
+      .where(inArray(users.username, [followerIdParam, followingIdParam]));
 
-    const follower = userResults.find((u) => u.username === followerIdInput);
-    const following = userResults.find((u) => u.username === followingIdInput);
+    const follower = userResults.find((u) => u.username === followerIdParam);
+    const following = userResults.find((u) => u.username === followingIdParam);
 
     if (!follower || !following) {
       throw new TRPCError({
@@ -62,27 +60,25 @@ export const followService = async (input: FollowInput) => {
   return { action: "unfollowed", status: "success" };
 };
 
-export const getFollowStatusService = async (input: FollowInput) => {
+export const getFollowStatusService = async (typeParam: string, followingIdParam: string, followerIdParam: string) => {
   let followerId: string;
   let followingId: string;
 
-  if (input.type === "id") {
-    followerId = input.followerId;
-    followingId = input.followingId;
+  if (typeParam === "id") {
+    followerId = followerIdParam;
+    followingId = followingIdParam;
   } else {
-    const { followerId: followerIdInput, followingId: followingIdInput } = input;
-
-    if (followerIdInput === followingIdInput) {
+    if (followerIdParam === followingIdParam) {
         return { isFollowing: false, isCurrentUser: true };
     }
 
     const userResults = await db
       .select({ id: users.id, username: users.username })
       .from(users)
-      .where(inArray(users.username, [followerIdInput, followingIdInput]));
+      .where(inArray(users.username, [followerIdParam, followingIdParam]));
 
-    const follower = userResults.find((u) => u.username === followerIdInput);
-    const following = userResults.find((u) => u.username === followingIdInput);
+    const follower = userResults.find((u) => u.username === followerIdParam);
+    const following = userResults.find((u) => u.username === followingIdParam);
 
     if (!follower || !following) {
       throw new TRPCError({
@@ -136,12 +132,13 @@ export const getUserFollowingCounts = async (id: string) => {
 };
 
 export const getFollowerOrFollowingList = async (
-  input: FollowerOrFollowingList
+  input: FollowerOrFollowingList,
+  userId: string
 ) => {
   const profilePics = alias(pictures, "profile_pics");
   const followCheck = alias(follows, "follow_check");
 
-  const { id, type, userId } = input;
+  const { id, type } = input;
 
   const followerList = db.$with("follower_list").as(
     db

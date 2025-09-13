@@ -14,17 +14,17 @@ function FollowButton({ followingId }: { followingId: string }) {
 
   const toggleFollowMutation = trpc.follows.followRoute.useMutation({
     onSuccess: () => {
-      if (user?.id && followingId) {
-        utils.follows.getFollowStatus.invalidate({ followerId: user.id, followingId });
+      if (followingId) {
+        utils.follows.getFollowStatus.invalidate({ followingId });
       }
       utils.follows.userFollowCounts.invalidate();
     },
   });
 
   const { data, isLoading } = trpc.follows.getFollowStatus.useQuery(
-    { followerId: user?.id ?? "", followingId },
+    { followingId },
     {
-      enabled: !!user?.id && !!followingId && user.id !== followingId,
+      enabled: !!followingId && user.id !== followingId,
     }
   );
 
@@ -61,7 +61,7 @@ function FollowButton({ followingId }: { followingId: string }) {
   }
 
   const handleFollowClick = () =>
-    toggleFollowMutation.mutateAsync({ followerId: user.id, followingId });
+    toggleFollowMutation.mutateAsync({ followingId });
 
   const isFollowing = data.isFollowing;
 

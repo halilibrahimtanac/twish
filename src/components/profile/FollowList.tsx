@@ -34,7 +34,7 @@ const FollowList: React.FC<FollowListProps> = ({ id, type, isOpen, onOpenChange 
 
   const utils = trpc.useUtils();
   const getFollowerOrFollowingList = trpc.follows.getFollowerOrFollowingList.useQuery(
-    { id, type, userId: user?.id || "" },
+    { id, type },
     { enabled: isOpen }
   );
   const toggleFollowMutation = trpc.follows.followRoute.useMutation({
@@ -66,7 +66,7 @@ const FollowList: React.FC<FollowListProps> = ({ id, type, isOpen, onOpenChange 
   
 
   const handleFollowClick = (id: string) =>
-    toggleFollowMutation.mutateAsync({ followerId: user.id, followingId: id });
+    toggleFollowMutation.mutateAsync({ followingId: id });
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
