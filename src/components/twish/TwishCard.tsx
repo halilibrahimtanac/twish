@@ -93,7 +93,7 @@ export function TwishCard({ twish }: TwishCardProps) {
     comment: twish.id
   }
 
-  const quoteKeyName = twish.type === "quote" ? "originalTwish" : "originalQuotedTwish"
+  const quoteKeyName = twish.type === "quote" ? "originalTwish" : "originalQuotedTwish";
 
   return (
     <Card onClick={() => router.push(`/twish/${routeTwishId[twish.type as keyof typeof routeTwishId]}?type=${twish.type}`)} className="sm:min-w-2xl w-full mx-auto py-2 rounded-none gap-3 border-t-0">
@@ -111,7 +111,7 @@ export function TwishCard({ twish }: TwishCardProps) {
         </div>
       )}
 
-      {(twish.type === "quote" || twish.originalQuotedTwish?.id) && <EmbeddedTwish embeddedTwish={{
+      {(twish.type === "quote" && twish.originalQuotedTwish?.id) && <EmbeddedTwish embeddedTwish={{
         id: twish[quoteKeyName]?.id || "",
         content: twish[quoteKeyName]?.content || "",
         authorAvatarUrl: twish[quoteKeyName]?.authorAvatarUrl || "",

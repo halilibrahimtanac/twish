@@ -1,4 +1,3 @@
-// Add `foreignKey` to your imports
 import { sqliteTable, text, integer, foreignKey, primaryKey } from "drizzle-orm/sqlite-core";
 import { relations, sql } from "drizzle-orm";
 
@@ -62,6 +61,15 @@ export const likes = sqliteTable("likes", {
 ])
 );
 
+export const stories = sqliteTable("stories", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  mediaUrl: text("media_url").notNull(),
+  mediaType: text("media_type").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   twishes: many(twishes),
   pictures: many(pictures),
@@ -72,6 +80,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   followers: many(follows, {
     relationName: "followers",
   }),
+  stories: many(stories), 
 }));
 
 export const twishesRelations = relations(twishes, ({ one, many }) => ({
@@ -137,6 +146,13 @@ export const followsRelations = relations(follows, ({ one }) => ({
     fields: [follows.followingId],
     references: [users.id],
     relationName: "followers",
+  }),
+}));
+
+export const storiesRelations = relations(stories, ({ one }) => ({
+  user: one(users, {
+    fields: [stories.userId],
+    references: [users.id],
   }),
 }));
 
