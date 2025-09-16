@@ -80,7 +80,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   followers: many(follows, {
     relationName: "followers",
   }),
-  stories: many(stories), 
+  stories: many(stories),
+  participants: many(participants),
+  sentMessages: many(messages),
 }));
 
 export const twishesRelations = relations(twishes, ({ one, many }) => ({
@@ -136,6 +138,28 @@ export const follows = sqliteTable("follows", {
 ])
 );
 
+export const conversations = sqliteTable("conversations", {
+  id: text("id").primaryKey(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+});
+
+export const participants = sqliteTable("participants", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: 'cascade' }),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+}, (self) => ([
+  primaryKey({ columns: [self.userId, self.conversationId] }),
+]));
+
+export const messages = sqliteTable("messages", {
+  id: text("id").primaryKey(),
+  content: text("content").notNull(),
+  senderId: text("sender_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: 'cascade' }),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+});
+
 export const followsRelations = relations(follows, ({ one }) => ({
   follower: one(users, {
     fields: [follows.followerId],
@@ -156,8 +180,39 @@ export const storiesRelations = relations(stories, ({ one }) => ({
   }),
 }));
 
+export const conversationsRelations = relations(conversations, ({ many }) => ({
+  participants: many(participants),
+  messages: many(messages),
+}));
+
+export const participantsRelations = relations(participants, ({ one }) => ({
+  user: one(users, {
+    fields: [participants.userId],
+    references: [users.id],
+  }),
+  conversation: one(conversations, {
+    fields: [participants.conversationId],
+    references: [conversations.id],
+  }),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  sender: one(users, {
+    fields: [messages.senderId],
+    references: [users.id],
+  }),
+  conversation: one(conversations, {
+    fields: [messages.conversationId],
+    references: [conversations.id],
+  }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type Twish = typeof twishes.$inferSelect;
 export type Media = typeof media.$inferSelect;
 export type Like = typeof likes.$inferSelect;
 export type Follow = typeof follows.$inferSelect;
+export type Story = typeof stories.$inferSelect;
+export type Conversation = typeof conversations.$inferSelect;
+export type Participant = typeof participants.$inferSelect;
+export type Message = typeof messages.$inferSelect;
