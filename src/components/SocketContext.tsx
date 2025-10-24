@@ -17,7 +17,7 @@ interface ISocketContext {
   socket: Socket | null;
   messages: Map<string, Message[]>;
   unreadCounts: Map<string, number>;
-  sendMessage: (toUserId: string, text: string) => void;
+  sendMessage: (toUserId: string, text: string) => Promise<boolean>;
   markAsRead: (userId: string) => void;
 }
 
@@ -25,7 +25,7 @@ const SocketContext = createContext<ISocketContext>({
   socket: null,
   messages: new Map(),
   unreadCounts: new Map(),
-  sendMessage: () => {},
+  sendMessage: async () => false,
   markAsRead: () => {},
 });
 
@@ -124,7 +124,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const sendMessageMutation = trpc.message.sendMessage.useMutation();
 
   const sendMessage = useCallback(async (toUserId: string, text: string) => {
-    if (!socket || !user?.id) return;
+    if (!socket || !user?.id) return false;
 
     try {
       const created = await sendMessageMutation.mutateAsync({ toUserId, content: text });
@@ -139,8 +139,10 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Notify signaling server so the recipient gets it real-time
       socket.emit('send-dm', { toUserId, text, message });
+      return true;
     } catch (e) {
       console.error('Failed to send message:', e);
+      return false;
     }
   }, [socket, user?.id, sendMessageMutation]);
   

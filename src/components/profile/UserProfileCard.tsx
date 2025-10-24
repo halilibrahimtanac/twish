@@ -375,7 +375,7 @@ export function UserProfileCard({
                   </Button>
                 ) : (
                   <span className="flex justify-end gap-2">
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={() => setIsChatOpen(true)}>
                       <MessageCircle className="h-4 w-4" />
                     </Button>
                     <Button
@@ -514,15 +514,7 @@ export function UserProfileCard({
               <span className="text-muted-foreground ml-1">Followers</span>
             </div>
 
-            {id && !canEdit && (
-              <>
-                <FollowButton followingId={id} />
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsChatOpen(true)}>
-                  <MessageCircle className="h-4 w-4" />
-                  Message
-                </Button>
-              </>
-            )}
+            {id && !canEdit && <FollowButton followingId={id} />}
           </div>}
         </div>
       </Card>

@@ -9,6 +9,7 @@ import { useSocket } from "@/components/SocketContext";
 import { initials } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import React, { useEffect, useRef, useState } from "react";
+import { Loader2, SendHorizonal } from "lucide-react";
 
 type ChatModalProps = {
   open: boolean;
@@ -62,10 +63,11 @@ export function ChatModal({ open, onOpenChange, otherUserId }: ChatModalProps) {
 
   const handleSend = async () => {
     if (!text.trim()) return;
-    await sendMessage(otherUserId, text.trim());
-    // Refresh list so the sender sees their message immediately
-    await msgsQuery.refetch();
-    setText("");
+    const res = await sendMessage(otherUserId, text.trim());
+    if(res){
+      await msgsQuery.refetch();
+      setText("");
+    }
   };
 
   return (
@@ -85,10 +87,14 @@ export function ChatModal({ open, onOpenChange, otherUserId }: ChatModalProps) {
           <div className="flex-1 overflow-y-auto space-y-2 pr-1">
             {(msgsQuery.data || []).map((m: MessageType) => (
               <div key={m.id} className={`flex ${m.senderId === me?.id ? "justify-end" : "justify-start"}`}>
-                <div className={`px-3 py-2 rounded-lg text-sm max-w-[75%] ${m.senderId === me?.id ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                <div
+                  className={`px-3 py-2 rounded-lg text-sm max-w-[75%] ${
+                    m.senderId === me?.id ? "bg-primary text-primary-foreground" : "bg-muted"
+                  }`}
+                >
                   {m.content}
                   <div className="text-[10px] opacity-70 mt-1 text-right">
-                    {new Date((m).createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </div>
                 </div>
               </div>
@@ -103,7 +109,13 @@ export function ChatModal({ open, onOpenChange, otherUserId }: ChatModalProps) {
               onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
               placeholder="Type a message"
             />
-            <Button onClick={handleSend}>Send</Button>
+            <Button onClick={handleSend} disabled={!text || msgsQuery.isLoading}>
+              {msgsQuery.isLoading ? (
+                <Loader2 className="animate-spin w-4 h-4" />
+              ) : (
+                <SendHorizonal className="w-4 h-4" />
+              )}
+            </Button>
           </div>
         </div>
       </DialogContent>
