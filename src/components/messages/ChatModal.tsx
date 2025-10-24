@@ -40,6 +40,7 @@ export function ChatModal({ open, onOpenChange, otherUserId }: ChatModalProps) {
 
   const [text, setText] = useState("");
   const endRef = useRef<HTMLDivElement | null>(null);
+  const [isOnline, setIsOnline] = useState(false);
 
   // Map server messages to the SocketContext message shape
   // When a realtime message arrives for this conversation, refresh from server
@@ -61,6 +62,29 @@ export function ChatModal({ open, onOpenChange, otherUserId }: ChatModalProps) {
     }
   }, [open, (msgsQuery.data || []).length]);
 
+  // Presence: check and subscribe to online status for the other user
+  useEffect(() => {
+    if (!socket || !otherUserId || !open) return;
+
+    socket.emit(
+      "check-user-online",
+      otherUserId,
+      (response: { isOnline: boolean }) => {
+        setIsOnline(response.isOnline);
+      }
+    );
+
+    const handleOnlineStatusUpdate = (onlineUsers: string[]) => {
+      setIsOnline(onlineUsers.includes(otherUserId));
+    };
+
+    socket.on("online-users-updated", handleOnlineStatusUpdate);
+
+    return () => {
+      socket.off("online-users-updated", handleOnlineStatusUpdate);
+    };
+  }, [socket, otherUserId, open]);
+
   const handleSend = async () => {
     if (!text.trim()) return;
     const res = await sendMessage(otherUserId, text.trim());
@@ -75,10 +99,18 @@ export function ChatModal({ open, onOpenChange, otherUserId }: ChatModalProps) {
       <DialogContent className="max-w-2xl w-full">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={otherUserQuery.data?.profilePictureUrl ?? undefined} />
-              <AvatarFallback>{initials(otherUserQuery.data?.name)}</AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={otherUserQuery.data?.profilePictureUrl ?? undefined} />
+                <AvatarFallback>{initials(otherUserQuery.data?.name)}</AvatarFallback>
+              </Avatar>
+              <span
+                className={`absolute -bottom-0 -right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-background ${
+                  isOnline ? "bg-green-500" : "bg-red-500"
+                }`}
+                aria-label={isOnline ? "Online" : "Offline"}
+              />
+            </div>
             <DialogTitle>{otherUserQuery.data?.name ?? "User"}</DialogTitle>
           </div>
         </DialogHeader>

@@ -38,7 +38,7 @@ const TwishHeader: React.FC<Props> = ({
   const user = sessionData?.user;
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.follows.getFollowStatus.useQuery(
-    { followerId: user?.username || "", followingId: twish.authorUsername, type: "name" },
+    { followingId: twish.authorUsername, type: "name" },
     { enabled: user?.username !== twish.authorUsername }
   );
 
@@ -75,7 +75,7 @@ const TwishHeader: React.FC<Props> = ({
   const handleFollow = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    toggleFollowMutation.mutateAsync({ followerId: user?.username || "", followingId: twish.authorUsername, type: "name" });
+    toggleFollowMutation.mutateAsync({ followingId: twish.authorUsername, type: "name" });
   };
 
   return (

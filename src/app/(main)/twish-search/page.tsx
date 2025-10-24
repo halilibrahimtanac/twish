@@ -2,7 +2,7 @@ import TwishSearch from "@/components/twish/TwishSearch";
 import React from "react";
 
 interface TwishSearchProps {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 const TwishSearchPage = async ({ searchParams }: TwishSearchProps) => {
