@@ -28,6 +28,7 @@ import { useDebounce } from "use-debounce";
 import ProfileTabs from "./ProfileTabs";
 import FullScreenMedia from "../FullScreenMedia";
 import { useSession } from "next-auth/react";
+import { ChatModal } from "../messages/ChatModal";
 
 export function UserProfileCard({
   id,
@@ -102,6 +103,7 @@ export function UserProfileCard({
   const [isLoading, setIsLoading] = useState(false);
 
   const [fullscreen, setFullscreen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     if (debouncedLocationQuery.length < 2) {
@@ -512,7 +514,15 @@ export function UserProfileCard({
               <span className="text-muted-foreground ml-1">Followers</span>
             </div>
 
-            {id && !canEdit && <FollowButton followingId={id} />}
+            {id && !canEdit && (
+              <>
+                <FollowButton followingId={id} />
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsChatOpen(true)}>
+                  <MessageCircle className="h-4 w-4" />
+                  Message
+                </Button>
+              </>
+            )}
           </div>}
         </div>
       </Card>
@@ -537,6 +547,11 @@ export function UserProfileCard({
         originalName: "",
         mimeType: "image/"
       }} closeFullscreen={() => setFullscreen(false)} mediaCount={1} />}
+
+      {/* Chat Modal */}
+      {id && !canEdit && (
+        <ChatModal open={isChatOpen} onOpenChange={setIsChatOpen} otherUserId={id} />
+      )}
     </div>
   );
 }

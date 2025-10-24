@@ -121,12 +121,28 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [socket, user?.id]);
 
-  const sendMessage = useCallback((toUserId: string, text: string) => {
-    if (socket && user?.id) {
-      console.log(`${user.id}'dan ${toUserId}'a mesaj gönderiliyor: ${text}`);
-      socket.emit('send-dm', { toUserId, text });
+  const sendMessageMutation = trpc.message.sendMessage.useMutation();
+
+  const sendMessage = useCallback(async (toUserId: string, text: string) => {
+    if (!socket || !user?.id) return;
+
+    try {
+      const created = await sendMessageMutation.mutateAsync({ toUserId, content: text });
+
+      const message = {
+        id: created.id,
+        from: user.id,
+        to: toUserId,
+        text,
+        timestamp: new Date(created.createdAt as unknown as string | number | Date).toString(),
+      } as Message;
+
+      // Notify signaling server so the recipient gets it real-time
+      socket.emit('send-dm', { toUserId, text, message });
+    } catch (e) {
+      console.error('Failed to send message:', e);
     }
-  }, [socket, user?.id]);
+  }, [socket, user?.id, sendMessageMutation]);
   
   const markAsRead = useCallback((userId: string) => {
     setUnreadCounts(prevCounts => {

@@ -93,52 +93,51 @@ export async function getMessagesBetweenUsers(currentUserId: string, otherUserId
 
 export async function sendMessage(senderId: string, input: SendMessageInput) {
     const { toUserId, content } = input;
-    
+
     if (senderId === toUserId) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Kendinize mesaj gönderemezsiniz."});
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Kendinize mesaj gönderemezsiniz." });
     }
 
-    return db.transaction(async (tx) => {
-        const conversationSubquery = tx
-            .select({ conversationId: participants.conversationId })
-            .from(participants)
-            .where(or(eq(participants.userId, senderId), eq(participants.userId, toUserId)))
-            .groupBy(participants.conversationId)
-            .having(sql`count(${participants.userId}) = 2`)
-            .limit(1);
+    return db.transaction((tx) => {
+      const conversationRow = tx
+        .select({ conversationId: participants.conversationId })
+        .from(participants)
+        .where(or(eq(participants.userId, senderId), eq(participants.userId, toUserId)))
+        .groupBy(participants.conversationId)
+        .having(sql`count(${participants.userId}) = 2`)
+        .limit(1)
+        .get();
 
-        const conversation = await conversationSubquery.get();
-        let conversationId: string;
-        
-        if (!conversation) {
-            const [newConversation] = await tx
-                .insert(conversations)
-                .values({ id: crypto.randomUUID() })
-                .returning();
-            
-            conversationId = newConversation.id;
-            
-            await tx.insert(participants).values([
-                { conversationId: conversationId, userId: senderId },
-                { conversationId: conversationId, userId: toUserId },
-            ]);
-        } else {
-            conversationId = conversation.conversationId;
-        }
+      let conversationId: string;
 
-        const [newMessage] = await tx
-            .insert(messages)
-            .values({
-                id: crypto.randomUUID(),
-                senderId,
-                conversationId,
-                content,
-            })
-            .returning();
-            
-        await tx.update(conversations)
-            .set({ updatedAt: new Date() })
-            .where(eq(conversations.id, conversationId));
+      if (!conversationRow) {
+        const insertedConvs = tx.insert(conversations).values({ id: crypto.randomUUID() }).returning().get(); // 👈 dikkat: get() ile tek satırı alıyoruz
+
+        const newConversation = insertedConvs;
+        conversationId = newConversation.id;
+
+        tx.insert(participants)
+          .values([
+            { conversationId, userId: senderId },
+            { conversationId, userId: toUserId },
+          ])
+          .run();
+      } else {
+        conversationId = conversationRow.conversationId;
+      }
+
+      const newMessage = tx
+        .insert(messages)
+        .values({
+          id: crypto.randomUUID(),
+          senderId,
+          conversationId,
+          content,
+        })
+        .returning()
+        .get();
+
+      tx.update(conversations).set({ updatedAt: new Date() }).where(eq(conversations.id, conversationId)).run();
 
         return newMessage;
     });
