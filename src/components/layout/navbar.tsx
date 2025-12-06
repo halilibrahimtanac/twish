@@ -16,7 +16,7 @@ export function Navbar() {
 
   return (
     <header className="px-4 sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-14 items-center justify-between gap-x-4">
+      <div className="mx-auto flex h-14 w-full items-center justify-between gap-x-3">
         <div className="flex items-center">
           <Link href="/home" className="flex items-center space-x-2">
             <Image
@@ -30,7 +30,7 @@ export function Navbar() {
         </div>
 
         {user && (
-          <div className="flex-1 justify-center md:flex">
+          <div className="flex-1 min-w-0 justify-center md:flex">
             <UserSearch />
           </div>
         )}

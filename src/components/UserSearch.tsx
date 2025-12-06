@@ -52,7 +52,7 @@ export function UserSearch() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => setIsFocused(true)}
-        placeholder="Kullanıcı veya twish ara..." // Placeholder'ı güncelleyebiliriz
+        placeholder="Search user or twish..." // Placeholder'ı güncelleyebiliriz
       />
 
       {showResults && (
@@ -73,18 +73,12 @@ export function UserSearch() {
                       }}
                     >
                       <Avatar>
-                        <AvatarImage
-                          src={user.profilePictureUrl ?? undefined}
-                        />
-                        <AvatarFallback>
-                          {user.name?.charAt(0).toUpperCase()}
-                        </AvatarFallback>
+                        <AvatarImage src={user.profilePictureUrl ?? undefined} />
+                        <AvatarFallback>{user.name?.charAt(0).toUpperCase()}</AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
                         <span className="font-semibold">{user.name}</span>
-                        <span className="text-sm text-muted-foreground">
-                          @{user.username}
-                        </span>
+                        <span className="text-sm text-muted-foreground">@{user.username}</span>
                       </div>
                     </Link>
                   </li>
@@ -93,22 +87,16 @@ export function UserSearch() {
             )}
 
             {!isLoading && debouncedQuery.length >= 2 && users?.length === 0 && (
-              <p className="text-center text-sm text-muted-foreground p-4">
-                Kullanıcı bulunamadı.
-              </p>
+              <p className="text-center text-sm text-muted-foreground p-4">No users found.</p>
             )}
 
             {query.length > 0 && query.length < 2 && (
-              <p className="text-center text-sm text-muted-foreground p-4">
-                Aramak için en az 2 karakter girin.
-              </p>
+              <p className="text-center text-sm text-muted-foreground p-4">Enter at least 2 characters to search.</p>
             )}
 
             {query.length > 0 && (
               <>
-                {users && users.length > 0 && (
-                  <div className="border-t -mx-2 my-2" />
-                )}
+                {users && users.length > 0 && <div className="border-t -mx-2 my-2" />}
                 <Link
                   href={`/twish-search?query=${encodeURIComponent(query)}&type=word`}
                   onClick={() => {
@@ -116,14 +104,10 @@ export function UserSearch() {
                     setQuery("");
                   }}
                 >
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start font-normal text-sm"
-                  >
+                  <Button variant="ghost" className="w-full justify-start font-normal text-sm">
                     <Search className="mr-2 h-4 w-4 text-muted-foreground" />
                     <span className="text-muted-foreground">
-                      <span className="font-semibold text-primary">{query}</span>{" "}
-                      için arama yap
+                      Search for <span className="font-semibold text-primary">{query}</span>
                     </span>
                   </Button>
                 </Link>

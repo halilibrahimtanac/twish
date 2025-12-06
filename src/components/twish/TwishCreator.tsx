@@ -88,6 +88,7 @@ export function TwishCreator() {
 
   const MAX_CHARACTERS = 280;
   const MAX_MEDIA_FILES = 4;
+  const MAX_VIDEO_BYTES = 10 * 1024 * 1024;
   const charactersRemaining = MAX_CHARACTERS - content.length;
 
 
@@ -112,7 +113,28 @@ export function TwishCreator() {
     const remainingSlots = MAX_MEDIA_FILES - mediaFiles.length;
     const filesToAdd = files.slice(0, remainingSlots);
 
-    const newMediaFiles: MediaFile[] = filesToAdd.map((file) => ({
+    const existingVideoBytes = mediaFiles
+      .filter((media) => media.type === "video")
+      .reduce((total, media) => total + media.file.size, 0);
+
+    let accumulatedSize = 0;
+    const allowedFiles = filesToAdd.filter((file) => {
+      const nextTotal = existingVideoBytes + accumulatedSize + file.size;
+      if (nextTotal <= MAX_VIDEO_BYTES) {
+        accumulatedSize += file.size;
+        return true;
+      }
+      return false;
+    });
+
+    if (allowedFiles.length !== filesToAdd.length) {
+      toast("Video limit", {
+        description: "Total video size cannot exceed 10MB. Remove large files and try again.",
+        closeButton: true,
+      });
+    }
+
+    const newMediaFiles: MediaFile[] = allowedFiles.map((file) => ({
       file,
       preview: URL.createObjectURL(file),
       type: "video",

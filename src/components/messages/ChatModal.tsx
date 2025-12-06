@@ -140,6 +140,7 @@ export function ChatModal({ open, onOpenChange, otherUserId }: ChatModalProps) {
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
               placeholder="Type a message"
+              maxLength={255}
             />
             <Button onClick={handleSend} disabled={!text || msgsQuery.isLoading}>
               {msgsQuery.isLoading ? (

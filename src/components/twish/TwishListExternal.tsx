@@ -13,8 +13,8 @@ const TwishListExternal = ({ twishes, emptyMessage }: TwishListExternalProps) =>
   return (
     <QueryStateHandler query={twishes}>
         <TooltipProvider>
-          <main className="sm:w-auto w-full min-h-screen bg-background flex flex-col items-center">
-            <div className="w-full flex flex-col">
+          <main className="w-full min-h-screen bg-background flex flex-col items-center">
+            <div className="w-full max-w-2xl flex flex-col">
               {twishes.data && twishes.data.length > 0 ? (
                 twishes.data.map((twish: TwishData) => (
                   <TwishCard key={twish.id} twish={twish} />
