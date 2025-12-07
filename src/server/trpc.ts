@@ -2,11 +2,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { authOptions } from "@/lib/authOptions";
 import { initTRPC, TRPCError } from "@trpc/server";
-import { getServerSession } from "next-auth";
+import getServerSession from "next-auth";
 
 export const createContext = async () => {
   try {
-    const session = await getServerSession(authOptions);
+    const sessionAuth = getServerSession(authOptions);
+    const session = await sessionAuth.auth();
 
     if (!session) {
       return { user: null };
