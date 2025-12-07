@@ -9,7 +9,6 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-/public/uploads
 /signal-server
 # testing
 /coverage
@@ -18,9 +17,6 @@
 /.next/
 /out/
 
-/drizzle
-sqlite.db
-/src/lib/data/cities500.json
 
 # production
 /build
