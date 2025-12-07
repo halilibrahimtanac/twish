@@ -1,7 +1,7 @@
 import db from "@/db";
 import { follows, pictures, users } from "@/db/schema";
 import { and, eq, like, not, or, sql } from "drizzle-orm";
-import { alias } from "drizzle-orm/sqlite-core";
+import { alias } from "drizzle-orm/pg-core";
 import { SearchTwishInput } from "./search.input";
 import { twishes } from "@/db/schema";
 import { twishDbQuery } from "../twish/twish.service";

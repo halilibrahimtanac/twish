@@ -3,7 +3,7 @@ import { conversations, messages, participants, pictures, users } from "@/db/sch
 import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { SendMessageInput } from "./message.input";
 import { TRPCError } from "@trpc/server";
-import { alias } from "drizzle-orm/sqlite-core";
+import { alias } from "drizzle-orm/pg-core";
 
 export async function getConversationsForUser(userId: string) {
   const otherParticipants = alias(participants, "other_participants");
@@ -68,7 +68,7 @@ export async function getMessagesBetweenUsers(currentUserId: string, otherUserId
         .having(sql`count(${participants.userId}) = 2`)
         .limit(1);
 
-    const conversation = await conversationSubquery.get();
+    const [conversation] = await conversationSubquery;
 
     if (!conversation) {
         return [];
@@ -98,35 +98,33 @@ export async function sendMessage(senderId: string, input: SendMessageInput) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Kendinize mesaj gönderemezsiniz." });
     }
 
-    return db.transaction((tx) => {
-      const conversationRow = tx
+    return db.transaction(async (tx) => {
+      const [conversationRow] = await tx
         .select({ conversationId: participants.conversationId })
         .from(participants)
         .where(or(eq(participants.userId, senderId), eq(participants.userId, toUserId)))
         .groupBy(participants.conversationId)
         .having(sql`count(${participants.userId}) = 2`)
         .limit(1)
-        .get();
 
       let conversationId: string;
 
       if (!conversationRow) {
-        const insertedConvs = tx.insert(conversations).values({ id: crypto.randomUUID() }).returning().get(); // 👈 dikkat: get() ile tek satırı alıyoruz
+        const insertedConvs = tx.insert(conversations).values({ id: crypto.randomUUID() }).returning();
 
-        const newConversation = insertedConvs;
+        const [newConversation] = await insertedConvs;
         conversationId = newConversation.id;
 
-        tx.insert(participants)
+        await tx.insert(participants)
           .values([
             { conversationId, userId: senderId },
             { conversationId, userId: toUserId },
           ])
-          .run();
       } else {
         conversationId = conversationRow.conversationId;
       }
 
-      const newMessage = tx
+      const newMessage = await tx
         .insert(messages)
         .values({
           id: crypto.randomUUID(),
@@ -135,10 +133,9 @@ export async function sendMessage(senderId: string, input: SendMessageInput) {
           content,
         })
         .returning()
-        .get();
 
-      tx.update(conversations).set({ updatedAt: new Date() }).where(eq(conversations.id, conversationId)).run();
+      await tx.update(conversations).set({ updatedAt: new Date() }).where(eq(conversations.id, conversationId));
 
-        return newMessage;
+        return newMessage[0];
     });
 }

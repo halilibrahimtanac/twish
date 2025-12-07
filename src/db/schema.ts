@@ -1,7 +1,7 @@
-import { sqliteTable, text, integer, foreignKey, primaryKey } from "drizzle-orm/sqlite-core";
+import { pgTable, text, integer, foreignKey, primaryKey, timestamp } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
-export const users = sqliteTable("users", {
+export const users = pgTable("users", {
   id: text("id").primaryKey(),
   email: text("email").notNull().unique(),
   username: text("username").notNull().unique(),
@@ -11,31 +11,31 @@ export const users = sqliteTable("users", {
   profilePictureId: text("profile_picture_id"),
   backgroundPictureId: text("background_picture_id"),
   location: text("location"),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at", { withTimezone: false }).notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at", { withTimezone: false }).notNull().default(sql`now()`),
 });
 
-export const pictures = sqliteTable("pictures", {
+export const pictures = pgTable("pictures", {
   id: text("id").primaryKey(),
   type: text("type").notNull(),
   url: text("url").notNull(),
   uploadedBy: text("uploaded_by").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at", { withTimezone: false }).notNull().default(sql`now()`),
 });
 
-export const twishes = sqliteTable("twishes", {
+export const twishes = pgTable("twishes", {
   id: text("id").primaryKey(),
   content: text("content").notNull(),
   authorId: text("author_id").notNull().references(() => users.id),
   originalTwishId: text("original_twish_id"), 
   type: text("type").notNull().default("original"),
   parentTwishId: text("parent_twish_id"),
-  hasMedia: integer("has_media", { mode: "boolean" }).notNull().default(false),
+  hasMedia: integer("has_media").notNull().default(0),
   mediaCount: integer("media_count").notNull().default(0),
   firstMediaUrl: text("first_media_url"),
   mediaPreview: text("media_preview"),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at", { withTimezone: false }).notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at", { withTimezone: false }).notNull().default(sql`now()`),
 }, (self) => ([
   foreignKey({
     columns: [self.originalTwishId],
@@ -43,31 +43,31 @@ export const twishes = sqliteTable("twishes", {
   }).onDelete("cascade")
 ]));
 
-export const media = sqliteTable("media", {
+export const media = pgTable("media", {
   id: text("id").primaryKey(),
   type: text("type").notNull(), // 'image' or 'video'
   url: text("url").notNull(),
   twishId: text("twish_id").notNull().references(() => twishes.id),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at", { withTimezone: false }).notNull().default(sql`now()`),
 });
 
-export const likes = sqliteTable("likes", {
+export const likes = pgTable("likes", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   twishId: text("twish_id").notNull().references(() => twishes.id, { onDelete: 'cascade' }),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at", { withTimezone: false }).notNull().default(sql`now()`),
 }, (self) => ([
   // A user can only like a post once, so we create a composite primary key.
   primaryKey({ columns: [self.userId, self.twishId] }),
 ])
 );
 
-export const stories = sqliteTable("stories", {
+export const stories = pgTable("stories", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   mediaUrl: text("media_url").notNull(),
   mediaType: text("media_type").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
-  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: false }).notNull().default(sql`now()`),
+  expiresAt: integer("expires_at").notNull(),
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -129,35 +129,35 @@ export const likesRelations = relations(likes, ({ one }) => ({
   }),
 }));
 
-export const follows = sqliteTable("follows", {
+export const follows = pgTable("follows", {
   followerId: text("follower_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   followingId: text("following_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at", { withTimezone: false }).notNull().default(sql`now()`),
 }, (self) => ([
   primaryKey({ columns: [self.followerId, self.followingId] }),
 ])
 );
 
-export const conversations = sqliteTable("conversations", {
+export const conversations = pgTable("conversations", {
   id: text("id").primaryKey(),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at", { withTimezone: false }).notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at", { withTimezone: false }).notNull().default(sql`now()`),
 });
 
-export const participants = sqliteTable("participants", {
+export const participants = pgTable("participants", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: 'cascade' }),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at", { withTimezone: false }).notNull().default(sql`now()`),
 }, (self) => ([
   primaryKey({ columns: [self.userId, self.conversationId] }),
 ]));
 
-export const messages = sqliteTable("messages", {
+export const messages = pgTable("messages", {
   id: text("id").primaryKey(),
   content: text("content").notNull(),
   senderId: text("sender_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: 'cascade' }),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at", { withTimezone: false }).notNull().default(sql`now()`),
 });
 
 export const followsRelations = relations(follows, ({ one }) => ({

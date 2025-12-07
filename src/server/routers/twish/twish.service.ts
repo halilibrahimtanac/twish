@@ -2,7 +2,7 @@ import db from "@/db";
 import { GetCommentsByTwishIdInput, GetFeedTwishes, LikeTwishInput, ReTwishInput, TwishInputType, UpdateTwishMediaPreviewInput } from "./twish.input";
 import { likes, pictures, twishes, users } from "@/db/schema";
 import { and, desc, eq, isNotNull, or, SQL, sql } from "drizzle-orm";
-import { alias } from "drizzle-orm/sqlite-core";
+import { alias } from "drizzle-orm/pg-core";
 
 export function twishDbQuery() {
 
@@ -24,7 +24,7 @@ export function twishDbQuery() {
     db.select({
         twishId: likes.twishId,
         likeCount: sql<number>`count(${likes.userId})`.as("like_count"),
-        likedByUserIds: sql<string[]>`group_concat(${likes.userId})`.mapWith((csv) => (csv ? csv.split(',').filter(Boolean) : [])).as("liked_by_user_ids"),
+        likedByUserIds: sql<string[]>`array_agg(${likes.userId})`.as("liked_by_user_ids"),
       })
       .from(likes)
       .groupBy(likes.twishId)
@@ -35,7 +35,7 @@ export function twishDbQuery() {
     db.select({
         originalTwishId: twishes.originalTwishId,
         retwishCount: sql<number>`count(${twishes.id})`.as("retwish_count"),
-        retwishedByUserIds: sql<string[]>`group_concat(${twishes.authorId})`.mapWith((csv) => (csv ? csv.split(',').filter(Boolean) : [])).as("retwished_by_user_ids"),
+        retwishedByUserIds: sql<string[]>`array_agg(${twishes.authorId})`.as("retwished_by_user_ids"),
       })
       .from(twishes)
       .where(and(
@@ -156,7 +156,7 @@ export async function getFeedTwishes(input: GetFeedTwishes) {
       conditions.push(eq(twishes.authorId, userId));
     }
     if (type === "media") {
-      conditions.push(eq(twishes.hasMedia, true));
+      conditions.push(eq(twishes.hasMedia, 1));
     }
   }
 
@@ -192,7 +192,7 @@ export const newTwishService = async (userId: string, input: TwishInputType) => 
         id: crypto.randomUUID(),
         content,
         authorId: userId,
-        hasMedia,
+        hasMedia: hasMedia ? 1 : 0,
         mediaCount,
       })
       .returning()

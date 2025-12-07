@@ -5,7 +5,7 @@ import { hashPassword, comparePassword } from "@/lib/password";
 import { createAndSetSession } from "@/lib/auth";
 import type { AddUserInput, GetUserProfileInfosInput, LoginInput, SaveUserInputType } from "./user.input";
 import { cookies } from "next/headers";
-import { alias } from "drizzle-orm/sqlite-core";
+import { alias } from "drizzle-orm/pg-core";
 
 export async function getAllUsers() {
   return db.select({ id: users.id, name: users.name }).from(users);

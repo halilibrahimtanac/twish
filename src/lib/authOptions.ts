@@ -4,7 +4,7 @@ import { compare } from "bcrypt";
 import { eq } from "drizzle-orm";
 import { pictures, users } from "@/db/schema";
 import db from "@/db";
-import { alias } from "drizzle-orm/sqlite-core";
+import { alias } from "drizzle-orm/pg-core";
 
 async function comparePassword(password: string, hash: string) {
   return compare(password, hash);

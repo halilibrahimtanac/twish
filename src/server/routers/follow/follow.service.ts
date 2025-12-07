@@ -2,7 +2,7 @@ import db from "@/db";
 import { FollowerOrFollowingList } from "./follow.input";
 import { and, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 import { follows, pictures, users } from "@/db/schema";
-import { alias } from "drizzle-orm/sqlite-core";
+import { alias } from "drizzle-orm/pg-core";
 import { TRPCError } from "@trpc/server";
 
 export const followService = async (typeParam: string, followingIdParam: string, followerIdParam: string) => {

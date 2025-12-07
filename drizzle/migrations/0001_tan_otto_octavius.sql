@@ -1,1 +1,0 @@
-ALTER TABLE `twishes` ADD `parent_twish_id` text;
