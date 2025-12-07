@@ -1,4 +1,4 @@
-import { NextAuthOptions } from "next-auth";
+import { NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcrypt";
 import { eq } from "drizzle-orm";
@@ -10,7 +10,7 @@ async function comparePassword(password: string, hash: string) {
   return compare(password, hash);
 }
 
-export const authOptions: NextAuthOptions = {
+export const authOptions: NextAuthConfig = {
   session: { strategy: "jwt" },
   providers: [
     CredentialsProvider({
@@ -20,7 +20,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.email || !credentials?.password || typeof credentials.email !== 'string' || typeof credentials.password !== 'string') return null;
 
         const profilePics = alias(pictures, "profile_pics");
         const backgroundPics = alias(pictures, "background_pics");
