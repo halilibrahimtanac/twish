@@ -11,6 +11,17 @@ async function comparePassword(password: string, hash: string) {
 }
 
 export const authOptions: NextAuthConfig = {
+  cookies: {
+    sessionToken: {
+      name: "__Secure-authjs.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+        path: "/",
+      },
+    },
+  },
   session: { strategy: "jwt" },
   providers: [
     CredentialsProvider({
@@ -20,7 +31,13 @@ export const authOptions: NextAuthConfig = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password || typeof credentials.email !== 'string' || typeof credentials.password !== 'string') return null;
+        if (
+          !credentials?.email ||
+          !credentials?.password ||
+          typeof credentials.email !== "string" ||
+          typeof credentials.password !== "string"
+        )
+          return null;
 
         const profilePics = alias(pictures, "profile_pics");
         const backgroundPics = alias(pictures, "background_pics");
@@ -62,11 +79,26 @@ export const authOptions: NextAuthConfig = {
   ],
   callbacks: {
     jwt({ token, user }) {
-      if (user) Object.assign(token, user);
+      if (user) {
+        token.id = user.id;
+        token.email = user.email;
+        token.username = user.username;
+        token.name = user.name;
+        token.bio = user.bio;
+        token.profilePictureUrl = user.profilePictureUrl;
+        token.backgroundPictureUrl = user.backgroundPictureUrl;
+      }
       return token;
     },
     session({ session, token }) {
-      if (session.user) Object.assign(session.user, token);
+      if (session.user) {
+        session.user.id = token.id;
+        session.user.email = token.email;
+        session.user.username = token.username;
+        session.user.name = token.name;
+        session.user.profilePictureUrl = token.profilePictureUrl;
+        session.user.backgroundPictureUrl = token.backgroundPictureUrl;
+      }
       return session;
     },
   },
