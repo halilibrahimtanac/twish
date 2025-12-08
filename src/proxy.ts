@@ -4,8 +4,11 @@ import { NextRequest, NextResponse } from "next/server";
 const authPages = ["/login", "/signup"];
 
 export async function proxy(request: NextRequest) {
+  console.log("NEXT AUTH SECRET: ", process.env.NEXTAUTH_SECRET);
   const sessionToken = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
   const { pathname } = request.nextUrl;
+  console.log("SESSION TOKEN: ", sessionToken);
+  console.log("PATH NAME: ", pathname);
 
   const isAuthRoute = authPages.some((route) => pathname.startsWith(route));
   const isAuthenticated = Boolean(sessionToken);
