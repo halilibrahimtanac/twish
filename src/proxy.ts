@@ -10,7 +10,9 @@ export async function proxy(request: NextRequest) {
       : "authjs.session-token";
 
   const rawToken = request.cookies.get(cookieName)?.value;
-
+  console.log("ENV: ", process.env.NODE_ENV);
+  console.log("COOKIE NAME: ", cookieName);
+  console.log("RAW TOKEN: ", rawToken);
   let sessionToken = null;
 
   if (rawToken) {
