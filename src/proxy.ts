@@ -1,39 +1,33 @@
-import { decode } from "next-auth/jwt";
+import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
 const authPages = ["/login", "/signup"];
 
 export async function proxy(request: NextRequest) {
-  const cookieName = 
-  process.env.NODE_ENV === "production"
-    ? "__Secure-authjs.session-token"
-      : "authjs.session-token";
-
+  const cookieName = "__Secure-authjs.session-token";
+  const secret = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET ?? process.env.JWT_SECRET;
   const rawToken = request.cookies.get(cookieName)?.value;
-  console.log("ENV: ", process.env.NODE_ENV);
-  console.log("COOKIE NAME: ", cookieName);
-  console.log("RAW TOKEN: ", rawToken);
+
   let sessionToken = null;
 
-  if (rawToken) {
+  if (secret) {
     try {
-      sessionToken = await decode({
-        token: rawToken,
-        secret: process.env.NEXTAUTH_SECRET!,
-        salt: process.env.NEXTAUTH_SECRET!
+      sessionToken = await getToken({
+        req: request,
+        secret,
+        cookieName
       });
     } catch (e) {
       console.error("JWT decode error:", e);
     }
+  } else if (rawToken) {
+    console.error("JWT decode error: missing auth secret");
   }
 
   const { pathname } = request.nextUrl;
 
-  console.log("DECODED TOKEN:", sessionToken);
-  console.log("PATH:", pathname);
-
   const isAuthRoute = authPages.some((route) => pathname.startsWith(route));
-  const isAuthenticated = Boolean(sessionToken);
+  const isAuthenticated = !!sessionToken;
 
   if (isAuthRoute && isAuthenticated) {
     return NextResponse.redirect(new URL("/home", request.url));
@@ -48,6 +42,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|login|signup|.*\\.(?:png|jpg|jpeg|gif|svg|webp)|uploads/).*)",
+    "/((?!sw.js|api|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|webp)|uploads/).*)",
   ],
 };
