@@ -8,6 +8,13 @@
       "when": 1765132887028,
       "tag": "0000_robust_the_fury",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1766350204235,
+      "tag": "0001_add-password-reset-tokens",
+      "breakpoints": true
     }
   ]
 }

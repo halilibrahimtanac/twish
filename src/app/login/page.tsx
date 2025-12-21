@@ -140,6 +140,12 @@ export default function LoginPage() {
               autoComplete="current-password"
             />
 
+            <div className="text-right text-sm">
+              <Link href="/forgot-password" className="underline">
+                Şifrenizi mi unuttunuz?
+              </Link>
+            </div>
+
             <Button
               type="submit"
               className="w-full"

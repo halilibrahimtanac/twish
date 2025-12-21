@@ -160,6 +160,15 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at", { withTimezone: false }).notNull().default(sql`now()`),
 });
 
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: false }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: false }).notNull().default(sql`now()`),
+  usedAt: timestamp("used_at", { withTimezone: false }),
+});
+
 export const followsRelations = relations(follows, ({ one }) => ({
   follower: one(users, {
     fields: [follows.followerId],
@@ -208,6 +217,7 @@ export const messagesRelations = relations(messages, ({ one }) => ({
 }));
 
 export type User = typeof users.$inferSelect;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type Twish = typeof twishes.$inferSelect;
 export type Media = typeof media.$inferSelect;
 export type Like = typeof likes.$inferSelect;

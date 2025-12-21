@@ -1,7 +1,7 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
-const authPages = ["/login", "/signup"];
+const authPages = ["/login", "/signup", "/forgot-password"];
 
 export async function proxy(request: NextRequest) {
   const cookieName = "__Secure-authjs.session-token";
