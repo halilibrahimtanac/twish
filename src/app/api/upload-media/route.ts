@@ -1,5 +1,3 @@
-import { promises as fs } from "fs";
-import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -12,13 +10,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const uploadDir = path.join(process.cwd(), `/public/uploads/twishes/${twishId}`);
-  
-  try {
-    await fs.access(uploadDir);
-  } catch (error) {
-    console.error(error);
-    await fs.mkdir(uploadDir, { recursive: true });
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET;
+
+  if (!cloudName || !uploadPreset) {
+    return NextResponse.json(
+      { message: "Upload service is not configured." },
+      { status: 500 }
+    );
   }
 
   const formData = await req.formData();
@@ -88,11 +87,28 @@ export async function POST(req: NextRequest) {
         uniqueFileName = `${nameWithoutExtension}_${crypto.randomUUID()}${extension}`;
       }
 
-      const filePath = path.join(uploadDir, uniqueFileName);
+      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
+      const uploadForm = new FormData();
+      uploadForm.append("file", file);
+      uploadForm.append("upload_preset", uploadPreset);
+      uploadForm.append("folder", `twishes/${twishId}`);
+      uploadForm.append("public_id", uniqueFileName);
 
-      // Write file
-      const buffer = Buffer.from(await file.arrayBuffer());
-      await fs.writeFile(filePath, buffer);
+      const cloudinaryRes = await fetch(uploadUrl, {
+        method: "POST",
+        body: uploadForm,
+      });
+
+      if (!cloudinaryRes.ok) {
+        const errorBody = await cloudinaryRes.text();
+        console.error("Cloudinary upload failed:", cloudinaryRes.status, errorBody);
+        return NextResponse.json(
+          { message: "Upload failed." },
+          { status: 500 }
+        );
+      }
+
+      const result = await cloudinaryRes.json();
 
       // Determine file type category
       const isVideo = file.type.startsWith("video/");
@@ -102,8 +118,8 @@ export async function POST(req: NextRequest) {
         id: crypto.randomUUID(),
         type: fileType,
         originalName: fileName,
-        fileName: uniqueFileName,
-        url: `/uploads/twishes/${twishId}/${uniqueFileName}`,
+        fileName: result.public_id as string,
+        url: result.secure_url as string,
         size: file.size,
         mimeType: file.type,
       });

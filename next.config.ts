@@ -16,6 +16,12 @@ const nextConfig: NextConfig = {
         port: '3000',
         pathname: '/uploads/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   async redirects(){

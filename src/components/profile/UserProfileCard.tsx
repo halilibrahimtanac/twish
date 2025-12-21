@@ -43,21 +43,21 @@ export function UserProfileCard({
   const { update: updateSession } = useSession();
   const utils = trpc.useUtils();
   const updateUserInfo = trpc.user.updateUserInfo.useMutation({
-    onSuccess: async (data) => {
+    onSuccess: async (_data, variables) => {
       await utils.user.getUserProfileInfos.invalidate();
     
       const updateObj: { profilePictureUrl?: string; backgroundPictureUrl?: string } = {};
-    
-      if (!Array.isArray(data)) {
-        if (data?.profilePictureId) {
-          updateObj.profilePictureUrl = `/uploads/${id}/${data.profilePictureId}`;
-        }
-        if (data?.backgroundPictureId) {
-          updateObj.backgroundPictureUrl = `/uploads/${id}/${data.backgroundPictureId}`;
-        }
+
+      if (variables?.profilePictureUrl) {
+        updateObj.profilePictureUrl = variables.profilePictureUrl;
       }
-    
-      await updateSession(updateObj);
+      if (variables?.backgroundPictureUrl) {
+        updateObj.backgroundPictureUrl = variables.backgroundPictureUrl;
+      }
+
+      if (Object.keys(updateObj).length > 0) {
+        await updateSession(updateObj);
+      }
     },
     onError: (error) => {
       console.error("Update failed:", error);
@@ -188,13 +188,13 @@ export function UserProfileCard({
 
     if (profilePictureFile && id) {
       const uploadedProfileUrl = await uploadFile(profilePictureFile, id);
-      newProfilePictureUrl = `/uploads/${id}/${uploadedProfileUrl}`;
+      newProfilePictureUrl = uploadedProfileUrl;
       updateObj.profilePictureUrl = newProfilePictureUrl;
     }
 
     if (backgroundPictureFile && id) {
       const uploadedBackgroundUrl = await uploadFile(backgroundPictureFile, id);
-      newBackgroundPictureUrl = `/uploads/${id}/${uploadedBackgroundUrl}`;
+      newBackgroundPictureUrl = uploadedBackgroundUrl;
       updateObj.backgroundPictureUrl = newBackgroundPictureUrl;
     }
 
@@ -212,6 +212,13 @@ export function UserProfileCard({
 
     if (Object.keys(updateObj).length > 0) {
       await updateUserInfo.mutateAsync(updateObj);
+    }
+
+    if (newProfilePictureUrl) {
+      setProfilePictureUrl(newProfilePictureUrl);
+    }
+    if (newBackgroundPictureUrl) {
+      setBackgroundPictureUrl(newBackgroundPictureUrl);
     }
 
     setIsEditing(false);
