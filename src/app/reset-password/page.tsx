@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -95,6 +95,7 @@ export default function ResetPasswordPage() {
   };
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <div className="flex min-h-screen w-full items-center justify-center bg-muted/40 p-4">
       <Card className="mx-auto w-full max-w-sm">
         <CardHeader className="text-center">
@@ -167,5 +168,6 @@ export default function ResetPasswordPage() {
         </CardContent>
       </Card>
     </div>
+    </Suspense>
   );
 }
