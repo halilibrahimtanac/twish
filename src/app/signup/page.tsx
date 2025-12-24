@@ -40,7 +40,7 @@ export default function SignupPage() {
 
   const addUser = trpc.user.addUser.useMutation({
     onSuccess: () => {
-      toast("Hesap oluşturuldu, giriş yapınız.");
+      toast("Account created, please log in.");
       router.push("/login");
     },
     onError: (error) => {
@@ -58,7 +58,7 @@ export default function SignupPage() {
       } catch {
         setError("root.serverError", {
           type: "validate",
-          message: error.message || "Bilinmeyen bir hata oluştu.",
+          message: error.message || "An unknown error occurred.",
         });
       }
     },
@@ -87,15 +87,15 @@ export default function SignupPage() {
               priority
             />
           </div>
-          <CardTitle className="text-2xl">Kayıt Ol</CardTitle>
+          <CardTitle className="text-2xl">Sign Up</CardTitle>
           <CardDescription>
-            Hesap oluşturmak için bilgilerinizi girin
+            Enter your details to create an account.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
             <FormInput<AddUserInput>
-              label="Ad Soyad"
+              label="Full Name"
               name="name"
               type="text"
               placeholder="John Doe"
@@ -103,7 +103,7 @@ export default function SignupPage() {
               errors={errors}
             />
             <FormInput<AddUserInput>
-              label="E-posta"
+              label="Email"
               name="email"
               type="email"
               placeholder="m@example.com"
@@ -111,15 +111,15 @@ export default function SignupPage() {
               errors={errors}
             />
             <FormInput<AddUserInput>
-              label="Kullanıcı Adı"
+              label="Username"
               name="username"
               type="text"
-              placeholder="kullaniciadi"
+              placeholder="username"
               register={register}
               errors={errors}
             />
             <FormInput<AddUserInput>
-              label="Şifre"
+              label="Password"
               name="password"
               type="password"
               placeholder="*********"
@@ -127,7 +127,7 @@ export default function SignupPage() {
               errors={errors}
             />
             <FormInput<AddUserInput>
-              label="Şifreyi Onayla"
+              label="Confirm Password"
               name="confirmPassword"
               type="password"
               placeholder="*********"
@@ -143,17 +143,17 @@ export default function SignupPage() {
               {addUser.isPending ? (
                 <span className="flex items-center justify-center">
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Hesap oluşturuluyor...
+                  Creating account...
                 </span>
               ) : (
-                "Kayıt Ol"
+                "Sign Up"
               )}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
-            Zaten bir hesabınız var mı?{" "}
+            Already have an account?{" "}
             <Link href="/login" className="underline">
-              Giriş yap
+              Log in
             </Link>
           </div>
         </CardContent>

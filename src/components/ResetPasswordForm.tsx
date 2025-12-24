@@ -21,12 +21,12 @@ import { toast } from "sonner";
 
 const resetSchema = z
   .object({
-    password: z.string().min(8, "Şifre en az 8 karakter olmalı."),
-    confirmPassword: z.string().min(1, "Şifreyi tekrar girin."),
+    password: z.string().min(8, "Password must be at least 8 characters."),
+    confirmPassword: z.string().min(1, "Please re-enter your password."),
   })
   .refine((data) => data.password === data.confirmPassword, {
     path: ["confirmPassword"],
-    message: "Şifreler aynı olmalı.",
+    message: "Passwords must match.",
   });
 
 type ResetForm = z.infer<typeof resetSchema>;
@@ -57,7 +57,7 @@ export default function ResetPasswordForm() {
 
   const onSubmit = async (values: ResetForm) => {
     if (!token) {
-      setServerError("Geçersiz bağlantı, lütfen yeni bir talep oluşturun.");
+      setServerError("Invalid link, please request a new one.");
       return;
     }
 
@@ -76,20 +76,20 @@ export default function ResetPasswordForm() {
 
       if (!res.ok || !data.success) {
         const message =
-          data.message || "Şifre güncellenemedi. Lütfen tekrar deneyin.";
+          data.message || "Password could not be updated. Please try again.";
         setServerError(message);
         setError("password", { type: "validate", message });
         return;
       }
 
-      toast.success("Şifreniz güncellendi.");
+      toast.success("Your password has been updated.");
       router.push("/login");
     } catch (error) {
       console.error(error);
-      setServerError("Beklenmedik bir hata oluştu. Lütfen tekrar deneyin.");
+      setServerError("An unexpected error occurred. Please try again.");
       setError("password", {
         type: "validate",
-        message: "Beklenmedik bir hata oluştu. Lütfen tekrar deneyin.",
+        message: "An unexpected error occurred. Please try again.",
       });
     }
   };
@@ -106,15 +106,15 @@ export default function ResetPasswordForm() {
               height={105}
             />
           </div>
-          <CardTitle className="text-2xl">Şifreyi Sıfırla</CardTitle>
+          <CardTitle className="text-2xl">Reset Password</CardTitle>
           <CardDescription>
-            Yeni şifrenizi belirleyin ve giriş yapmaya devam edin.
+            Set your new password to keep using Twish.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
             <FormInput<ResetForm>
-              label="Yeni şifre"
+              label="New Password"
               name="password"
               type="password"
               placeholder="**********"
@@ -124,7 +124,7 @@ export default function ResetPasswordForm() {
             />
 
             <FormInput<ResetForm>
-              label="Yeni şifre (tekrar)"
+              label="New Password (repeat)"
               name="confirmPassword"
               type="password"
               placeholder="**********"
@@ -141,25 +141,25 @@ export default function ResetPasswordForm() {
               {isSubmitting ? (
                 <span className="flex items-center justify-center">
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Güncelleniyor...
+                  Updating...
                 </span>
               ) : (
-                "Şifreyi Güncelle"
+                "Update Password"
               )}
             </Button>
 
             <div className="mt-2 text-center text-sm">
               <Link href="/login" className="underline">
-                Giriş sayfasına dön
+                Back to login page
               </Link>
             </div>
           </form>
 
           {!token && (
             <div className="mt-4 rounded-md bg-muted p-3 text-sm">
-              Bu bağlantı eksik görünüyor.{" "}
+              This link seems incomplete.{" "}
               <Link href="/forgot-password" className="underline">
-                Yeni bir sıfırlama iste
+                Request a new reset
               </Link>
               .
             </div>

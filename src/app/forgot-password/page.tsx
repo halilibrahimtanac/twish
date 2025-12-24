@@ -19,7 +19,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const forgotSchema = z.object({
-  email: z.string().email("Geçerli bir e-posta girin."),
+  email: z.string().email("Enter a valid email."),
 });
 
 type ForgotForm = z.infer<typeof forgotSchema>;
@@ -55,12 +55,12 @@ export default function ForgotPasswordPage() {
       if (!res.ok || !data.success) {
         setError("email", {
           type: "validate",
-          message: data.message || "Şifre sıfırlama bağlantısı oluşturulamadı.",
+          message: data.message || "Could not create password reset link.",
         });
         return;
       }
 
-      toast.success("Eğer bu e-posta kayıtlıysa bağlantı gönderildi.");
+      toast.success("If this email is registered, a link has been sent.");
 
       if (data.resetUrl) {
         setDevResetUrl(data.resetUrl as string);
@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
       console.error(error);
       setError("email", {
         type: "validate",
-        message: "Beklenmedik bir hata oluştu. Lütfen tekrar deneyin.",
+        message: "An unexpected error occurred. Please try again.",
       });
     }
   };
@@ -86,15 +86,15 @@ export default function ForgotPasswordPage() {
               height={105}
             />
           </div>
-          <CardTitle className="text-2xl">Şifremi Unuttum</CardTitle>
+          <CardTitle className="text-2xl">Forgot Password</CardTitle>
           <CardDescription>
-            Hesabınıza bağlı e-postayı girin, size bir bağlantı gönderelim.
+            Enter the email linked to your account and {"we'll"} send you a link.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
             <FormInput<ForgotForm>
-              label="E-posta"
+              label="Email"
               name="email"
               type="email"
               placeholder="m@example.com"
@@ -107,23 +107,23 @@ export default function ForgotPasswordPage() {
               {isSubmitting ? (
                 <span className="flex items-center justify-center">
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Gönderiliyor...
+                  Sending...
                 </span>
               ) : (
-                "Bağlantı Gönder"
+                "Send Link"
               )}
             </Button>
 
             <div className="mt-2 text-center text-sm">
               <Link href="/login" className="underline">
-                Giriş sayfasına dön
+                Back to login page
               </Link>
             </div>
           </form>
 
           {devResetUrl && (
             <div className="mt-4 rounded-md bg-muted p-3 text-sm break-all">
-              <div className="font-medium">Geliştirme bağlantısı</div>
+              <div className="font-medium">Development link</div>
               <Link href={devResetUrl} className="underline">
                 {devResetUrl}
               </Link>

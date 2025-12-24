@@ -36,37 +36,6 @@ export default function LoginPage() {
     },
   });
 
-  /* const login = trpc.user.login.useMutation({
-    onSuccess: (res) => {
-      setUserObject({
-        ...res.user,
-        profilePictureUrl: res.user.profilePictureUrl || undefined,
-        backgroundPictureUrl: res.user.backgroundPictureUrl || undefined,
-      });
-      router.push("/home");
-    },
-    onError: (error) => {
-      let parsedError: [keyof LoginInput, string][] | null = null;
-      try {
-        const obj = JSON.parse(error.message);
-        if (obj && typeof obj === "object" && !Array.isArray(obj)) {
-          parsedError = Object.entries(obj) as [keyof LoginInput, string][];
-        }
-      } catch {}
-      if (parsedError && parsedError[0] && parsedError[0][0]) {
-        setError(parsedError[0][0], {
-          type: "validate",
-          message: parsedError[0][1],
-        });
-      } else {
-        setError("email", {
-          type: "validate",
-          message: error.message || "An unknown error occurred.",
-        });
-      }
-    },
-  }); */
-
   const onSubmit: SubmitHandler<LoginInput> = async (formData) => {
     try {
       setIsLoading(true);
@@ -80,23 +49,21 @@ export default function LoginPage() {
         console.error(result.error);
         setError("email", {
           type: "manual",
-          message: "Email veya şifre hatalı.",
+          message: "Email or password is incorrect.",
         });
         setError("password", {
           type: "manual",
-          message: "Email veya şifre hatalı.",
+          message: "Email or password is incorrect.",
         });
         return;
       }
 
- 
       router.push("/home");
       router.refresh();
-
     } catch (error) {
       console.log(error);
-      setError("root", { message: "Beklenmedik bir hata oluştu." });
-    }finally{
+      setError("root", { message: "An unexpected error occurred." });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -113,15 +80,15 @@ export default function LoginPage() {
               height={105}
             />
           </div>
-          <CardTitle className="text-2xl">Giriş Yap</CardTitle>
+          <CardTitle className="text-2xl">Log In</CardTitle>
           <CardDescription>
-            Hesabınıza giriş yapmak için bilgilerinizi girin
+            Enter your info to access your account.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
             <FormInput<LoginInput>
-              label="E-posta"
+              label="Email"
               name="email"
               type="email"
               placeholder="m@example.com"
@@ -131,7 +98,7 @@ export default function LoginPage() {
             />
 
             <FormInput<LoginInput>
-              label="Şifre"
+              label="Password"
               name="password"
               type="password"
               placeholder="**********"
@@ -142,7 +109,7 @@ export default function LoginPage() {
 
             <div className="text-right text-sm">
               <Link href="/forgot-password" className="underline">
-                Şifrenizi mi unuttunuz?
+                Forgot your password?
               </Link>
             </div>
 
@@ -154,17 +121,17 @@ export default function LoginPage() {
               {isLoading ? (
                 <span className="flex items-center justify-center">
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Giriş yapılıyor...
+                  Logging in...
                 </span>
               ) : (
-                "Giriş Yap"
+                "Log In"
               )}
             </Button>
 
             <div className="mt-4 text-center text-sm">
-              {"Hesabınız yok mu? "}
+              {"Don't have an account? "}
               <Link href="/signup" className="underline">
-                Kayıt Ol
+                Sign Up
               </Link>
             </div>
           </form>

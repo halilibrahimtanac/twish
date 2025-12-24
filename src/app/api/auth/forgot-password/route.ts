@@ -10,7 +10,7 @@ const requestSchema = z.object({
   email: z.string().email(),
 });
 
-const RESET_TOKEN_TTL_MS = 1000 * 60 * 60; // 1 hour
+const RESET_TOKEN_TTL_MS = 3000 * 60 * 60; // 1 hour
 
 function getBaseUrl() {
   const candidate =
