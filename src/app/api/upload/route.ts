@@ -29,15 +29,21 @@ export async function POST(req: NextRequest) {
   const fileName = file.name ?? "file";
   const lastDotIndex = fileName.lastIndexOf(".");
 
-  let uniqueFileName;
+  const sanitizePublicId = (name: string) => {
+    const normalized = name.normalize("NFKD");
+    const sanitized = normalized
+      .replace(/\s+/g, "-")
+      .replace(/[^a-zA-Z0-9_-]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "");
 
-  if (lastDotIndex === -1) {
-    uniqueFileName = `${fileName}_${crypto.randomUUID()}`;
-  } else {
-    const nameWithoutExtension = fileName.substring(0, lastDotIndex);
-    const extension = fileName.substring(lastDotIndex);
-    uniqueFileName = `${nameWithoutExtension}_${crypto.randomUUID()}${extension}`;
-  }
+    return sanitized || "file";
+  };
+
+  const nameWithoutExtension =
+    lastDotIndex === -1 ? fileName : fileName.substring(0, lastDotIndex);
+  const safeBaseName = sanitizePublicId(nameWithoutExtension);
+  const uniqueFileName = `${safeBaseName}-${crypto.randomUUID()}`;
 
   try {
     const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;

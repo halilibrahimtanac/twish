@@ -38,6 +38,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const sanitizePublicId = (name: string) => {
+    const normalized = name.normalize("NFKD");
+    const sanitized = normalized
+      .replace(/\s+/g, "-")
+      .replace(/[^a-zA-Z0-9_-]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+    return sanitized || "file";
+  };
+
   const allowedTypes = [
     // Images
     "image/jpeg",
@@ -77,15 +88,10 @@ export async function POST(req: NextRequest) {
       // Generate unique filename
       const fileName = file.name;
       const lastDotIndex = fileName.lastIndexOf(".");
-      
-      let uniqueFileName;
-      if (lastDotIndex === -1) {
-        uniqueFileName = `${fileName}_${crypto.randomUUID()}`;
-      } else {
-        const nameWithoutExtension = fileName.substring(0, lastDotIndex);
-        const extension = fileName.substring(lastDotIndex);
-        uniqueFileName = `${nameWithoutExtension}_${crypto.randomUUID()}${extension}`;
-      }
+      const nameWithoutExtension =
+        lastDotIndex === -1 ? fileName : fileName.substring(0, lastDotIndex);
+      const safeBaseName = sanitizePublicId(nameWithoutExtension);
+      const uniqueFileName = `${safeBaseName}-${crypto.randomUUID()}`;
 
       const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
       const uploadForm = new FormData();
