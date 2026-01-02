@@ -40,6 +40,7 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
   const [quoteContent, setQuoteContent] = useState("");
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [playingVideos, setPlayingVideos] = useState<Set<number>>(new Set());
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -52,19 +53,11 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
   const MAX_CHARACTERS = 280;
   const MAX_MEDIA_FILES = 4;
   const charactersRemaining = MAX_CHARACTERS - quoteContent.length;
+  const hasTypedContent = quoteContent.trim().length > 0;
 
   const reTwish = trpc.twish.reTwish.useMutation(
     createMutationOptions({
       utils,
-      onSuccessCallback: () => {
-        onOpenChange(false);
-        // Clean up media files
-        mediaFiles.forEach((media) => URL.revokeObjectURL(media.preview));
-        setMediaFiles([]);
-        setQuoteContent("");
-        setPlayingVideos(new Set());
-        videoRefs.current = {};
-      },
       errorMessage: "Failed to post.",
     })
   );
@@ -186,24 +179,45 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
     return data.files;
   };
 
-  const handleRetwish = () => {
-    if (!user) return toast.error("You must be logged in to retwish.");
+  const resetComposerState = () => {
+    mediaFiles.forEach((media) => URL.revokeObjectURL(media.preview));
+    setMediaFiles([]);
+    setQuoteContent("");
+    setPlayingVideos(new Set());
+    videoRefs.current = {};
+    setIsSubmitting(false);
+  };
 
-    reTwish.mutate({
-      content: "",
-      userId: user.id,
-      originalTwishId: (
-        twish.type === "retwish" ? twish.originalTwish?.id : twish.id
-      ) as string,
-      type: "retwish",
-      hasMedia: false,
-      mediaCount: 0
-    });
+  const handleRetwish = async () => {
+    if (!user) return toast.error("You must be logged in to retwish.");
+    if (isSubmitting || reTwish.isPending || twishUpdate.isPending) return;
+
+    setIsSubmitting(true);
+    try {
+      await reTwish.mutateAsync({
+        content: "",
+        userId: user.id,
+        originalTwishId: (
+          twish.type === "retwish" ? twish.originalTwish?.id : twish.id
+        ) as string,
+        type: "retwish",
+        hasMedia: false,
+        mediaCount: 0
+      });
+      resetComposerState();
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error retwishing:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleQuoteOrCommentTwish = async (type: "quote" | "comment") => {
     if (!user) return toast.error("You must be logged in to quote.");
-    if (!quoteContent.trim()) return;
+    if (!hasTypedContent && mediaFiles.length === 0) return;
+    if (isSubmitting || reTwish.isPending || twishUpdate.isPending) return;
+    setIsSubmitting(true);
 
     try {
       const twishId = (
@@ -231,12 +245,17 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
           mediaPreview: JSON.stringify(uploadedFiles)
         });
       }
+
+      resetComposerState();
+      onOpenChange(false);
     } catch (error) {
       console.error("Error creating twish:", error);
       toast("Error", {
         description: "Failed to create post. Please try again.",
         closeButton: true,
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -371,7 +390,8 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
                 disabled={
                   mediaFiles.length >= MAX_MEDIA_FILES || 
                   reTwish.isPending ||
-                  twishUpdate.isPending
+                  twishUpdate.isPending ||
+                  isSubmitting
                 }
                 className="h-9 w-9 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
               >
@@ -386,7 +406,8 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
                 disabled={
                   mediaFiles.length >= MAX_MEDIA_FILES || 
                   reTwish.isPending ||
-                  twishUpdate.isPending
+                  twishUpdate.isPending ||
+                  isSubmitting
                 }
                 className="h-9 w-9 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
               >
@@ -434,11 +455,7 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
   // Clean up on modal close
   const handleModalClose = (open: boolean) => {
     if (!open) {
-      mediaFiles.forEach((media) => URL.revokeObjectURL(media.preview));
-      setMediaFiles([]);
-      setQuoteContent("");
-      setPlayingVideos(new Set());
-      videoRefs.current = {};
+      resetComposerState();
     }
     onOpenChange(open);
   };
@@ -487,22 +504,23 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
                   variant="secondary"
                   className="w-full sm:w-auto"
                   onClick={handleRetwish}
-                  disabled={reTwish.isPending || twishUpdate.isPending}
+                  disabled={reTwish.isPending || twishUpdate.isPending || isSubmitting}
                 >
-                  Retwish
+                  {reTwish.isPending || isSubmitting ? "Posting..." : "Retwish"}
                 </Button>
                 <Button
                   type="submit"
                   className="w-full sm:w-auto"
                   onClick={() => handleQuoteOrCommentTwish("quote")}
                   disabled={
-                    !quoteContent.trim() || 
+                    (!hasTypedContent && mediaFiles.length === 0) || 
                     charactersRemaining < 0 ||
                     reTwish.isPending ||
-                    twishUpdate.isPending
+                    twishUpdate.isPending ||
+                    isSubmitting
                   }
                 >
-                  {(reTwish.isPending || twishUpdate.isPending) 
+                  {(reTwish.isPending || twishUpdate.isPending || isSubmitting) 
                     ? "Posting..." 
                     : "Quote"
                   }
@@ -515,13 +533,14 @@ export const RetwishModal: React.FC<RetwishModalProps> = ({
                 className="w-full sm:w-auto"
                 onClick={() => handleQuoteOrCommentTwish("comment")}
                 disabled={
-                  !quoteContent.trim() || 
+                  (!hasTypedContent && mediaFiles.length === 0) || 
                   charactersRemaining < 0 ||
                   reTwish.isPending ||
-                  twishUpdate.isPending
+                  twishUpdate.isPending ||
+                  isSubmitting
                 }
               >
-                {(reTwish.isPending || twishUpdate.isPending) 
+                {(reTwish.isPending || twishUpdate.isPending || isSubmitting) 
                   ? "Posting..." 
                   : "Comment"
                 }

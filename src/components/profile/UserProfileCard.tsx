@@ -13,6 +13,7 @@ import {
   Camera,
   MessageCircle,
   Video,
+  Loader2,
 } from "lucide-react";
 import { useState, useRef, ChangeEvent, useEffect } from "react";
 
@@ -42,7 +43,9 @@ export function UserProfileCard({
 }: Partial<User & { canEdit: boolean; followerCount: number; followingCount: number; }>) {
   const { update: updateSession } = useSession();
   const utils = trpc.useUtils();
-  const updateUserInfo = trpc.user.updateUserInfo.useMutation({
+  const {
+    mutateAsync: updateUserInfo,
+  } = trpc.user.updateUserInfo.useMutation({
     onSuccess: async (_data, variables) => {
       await utils.user.getUserProfileInfos.invalidate();
     
@@ -63,7 +66,7 @@ export function UserProfileCard({
       console.error("Update failed:", error);
     },
   });
-  const { data, isPending } = trpc.follows.userFollowCounts.useQuery({ id: id || "" });
+  const { data, isPending: isFollowCountsPending } = trpc.follows.userFollowCounts.useQuery({ id: id || "" });
 
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(initialName || "");
@@ -101,6 +104,7 @@ export function UserProfileCard({
   const [suggestions, setSuggestions] = useState<City[]>([]);
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [fullscreen, setFullscreen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -175,6 +179,8 @@ export function UserProfileCard({
   };
 
   const handleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
     const updateObj: SaveUserInputType = {};
 
     let newProfilePictureUrl =
@@ -186,42 +192,46 @@ export function UserProfileCard({
         ? undefined
         : backgroundPictureUrl;
 
-    if (profilePictureFile && id) {
-      const uploadedProfileUrl = await uploadFile(profilePictureFile, id);
-      newProfilePictureUrl = uploadedProfileUrl;
-      updateObj.profilePictureUrl = newProfilePictureUrl;
-    }
+    try {
+      if (profilePictureFile && id) {
+        const uploadedProfileUrl = await uploadFile(profilePictureFile, id);
+        newProfilePictureUrl = uploadedProfileUrl;
+        updateObj.profilePictureUrl = newProfilePictureUrl;
+      }
 
-    if (backgroundPictureFile && id) {
-      const uploadedBackgroundUrl = await uploadFile(backgroundPictureFile, id);
-      newBackgroundPictureUrl = uploadedBackgroundUrl;
-      updateObj.backgroundPictureUrl = newBackgroundPictureUrl;
-    }
+      if (backgroundPictureFile && id) {
+        const uploadedBackgroundUrl = await uploadFile(backgroundPictureFile, id);
+        newBackgroundPictureUrl = uploadedBackgroundUrl;
+        updateObj.backgroundPictureUrl = newBackgroundPictureUrl;
+      }
 
-    if (JSON.stringify(location) !== JSON.stringify(initialLocation)) {
-      updateObj.location = JSON.stringify(location);
-    }
+      if (JSON.stringify(location) !== JSON.stringify(initialLocation)) {
+        updateObj.location = JSON.stringify(location);
+      }
 
-    if (name !== initialName) {
-      updateObj.name = name;
-    }
+      if (name !== initialName) {
+        updateObj.name = name;
+      }
 
-    if (bio !== initialBio) {
-      updateObj.bio = bio;
-    }
+      if (bio !== initialBio) {
+        updateObj.bio = bio;
+      }
 
-    if (Object.keys(updateObj).length > 0) {
-      await updateUserInfo.mutateAsync(updateObj);
-    }
+      if (Object.keys(updateObj).length > 0) {
+        await updateUserInfo(updateObj);
+      }
 
-    if (newProfilePictureUrl) {
-      setProfilePictureUrl(newProfilePictureUrl);
-    }
-    if (newBackgroundPictureUrl) {
-      setBackgroundPictureUrl(newBackgroundPictureUrl);
-    }
+      if (newProfilePictureUrl) {
+        setProfilePictureUrl(newProfilePictureUrl);
+      }
+      if (newBackgroundPictureUrl) {
+        setBackgroundPictureUrl(newBackgroundPictureUrl);
+      }
 
-    setIsEditing(false);
+      setIsEditing(false);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -369,10 +379,19 @@ export function UserProfileCard({
 
             {isEditing ? (
               <span className="flex justify-end gap-2 mt-5">
-                <Button variant="outline" onClick={handleCancel}>
+                <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
                   Cancel
                 </Button>
-                <Button onClick={handleSave}>Save</Button>
+                <Button onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving...
+                    </span>
+                  ) : (
+                    "Save"
+                  )}
+                </Button>
               </span>
             ) : (
               <>
@@ -511,7 +530,7 @@ export function UserProfileCard({
             )}
           </div>
 
-          {isPending ? <div className="w-full flex justify-center items-center"><Spinner /></div> : <div className="items-center flex gap-4">
+          {isFollowCountsPending ? <div className="w-full flex justify-center items-center"><Spinner /></div> : <div className="items-center flex gap-4">
             <div className="cursor-pointer h-fit" onClick={() => followListOpenHandler("following")}>
               <span className="font-bold">{data?.followingCount || 0}</span>
               <span className="text-muted-foreground ml-1">Following</span>

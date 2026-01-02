@@ -27,7 +27,8 @@ const TwishContent: React.FC<Props> = ({ content, originalAuthorUsername, parent
       <div
         className={cn(
           sharedTextareaClasses,
-          "text-lg pointer-events-none text-foreground [grid-area:1/1/2/2]"
+          "text-lg pointer-events-none text-foreground [grid-area:1/1/2/2]",
+          !content && "hidden"
         )}
         aria-hidden="true"
       >

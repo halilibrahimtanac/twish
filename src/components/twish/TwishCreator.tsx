@@ -43,6 +43,7 @@ export function TwishCreator() {
   const [content, setContent] = useState("");
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [playingVideos, setPlayingVideos] = useState<Set<number>>(new Set());
+  const [isPosting, setIsPosting] = useState(false);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -201,7 +202,9 @@ export function TwishCreator() {
   };
 
   const handlePost = async () => {
+    if (isPosting || isPending || isUpdatePending) return;
     if (content.length === 0 || content.length > MAX_CHARACTERS) return;
+    setIsPosting(true);
 
     let newTwishId: string | null = null;
     try {
@@ -246,6 +249,8 @@ export function TwishCreator() {
           closeButton: true,
         });
       }
+    } finally {
+      setIsPosting(false);
     }
   };
 
@@ -383,7 +388,7 @@ export function TwishCreator() {
           <Button
             variant="ghost" size="icon"
             onClick={() => imageInputRef.current?.click()}
-            disabled={mediaFiles.length >= MAX_MEDIA_FILES || isPending}
+            disabled={mediaFiles.length >= MAX_MEDIA_FILES || isPending || isPosting}
             className="h-9 w-9 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
           >
             <ImageIcon className="h-5 w-5" />
@@ -391,7 +396,7 @@ export function TwishCreator() {
           <Button
             variant="ghost" size="icon"
             onClick={() => videoInputRef.current?.click()}
-            disabled={mediaFiles.length >= MAX_MEDIA_FILES || isPending}
+            disabled={mediaFiles.length >= MAX_MEDIA_FILES || isPending || isPosting}
             className="h-9 w-9 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
           >
             <Video className="h-5 w-5" />
@@ -412,9 +417,9 @@ export function TwishCreator() {
           </p>
           <Button
             onClick={handlePost}
-            disabled={ content.length === 0 || content.length > MAX_CHARACTERS || isPending || isUpdatePending }
+            disabled={ content.length === 0 || content.length > MAX_CHARACTERS || isPending || isUpdatePending || isPosting }
           >
-            {(isPending || isUpdatePending) ? "Posting..." : "Post"}
+            {(isPending || isUpdatePending || isPosting) ? "Posting..." : "Post"}
           </Button>
         </div>
       </CardFooter>

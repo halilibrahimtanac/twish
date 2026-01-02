@@ -41,6 +41,7 @@ export function ChatModal({ open, onOpenChange, otherUserId }: ChatModalProps) {
   const [text, setText] = useState("");
   const endRef = useRef<HTMLDivElement | null>(null);
   const [isOnline, setIsOnline] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   // Map server messages to the SocketContext message shape
   // When a realtime message arrives for this conversation, refresh from server
@@ -86,11 +87,17 @@ export function ChatModal({ open, onOpenChange, otherUserId }: ChatModalProps) {
   }, [socket, otherUserId, open]);
 
   const handleSend = async () => {
-    if (!text.trim()) return;
-    const res = await sendMessage(otherUserId, text.trim());
-    if(res){
-      await msgsQuery.refetch();
-      setText("");
+    const trimmed = text.trim();
+    if (!trimmed || isSending) return;
+    setIsSending(true);
+    try {
+      const res = await sendMessage(otherUserId, trimmed);
+      if (res) {
+        await msgsQuery.refetch();
+        setText("");
+      }
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -138,12 +145,12 @@ export function ChatModal({ open, onOpenChange, otherUserId }: ChatModalProps) {
             <Input
               value={text}
               onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !isSending) handleSend(); }}
               placeholder="Type a message"
               maxLength={255}
             />
-            <Button onClick={handleSend} disabled={!text || msgsQuery.isLoading}>
-              {msgsQuery.isLoading ? (
+            <Button onClick={handleSend} disabled={!text.trim() || msgsQuery.isLoading || isSending}>
+              {isSending || msgsQuery.isLoading ? (
                 <Loader2 className="animate-spin w-4 h-4" />
               ) : (
                 <SendHorizonal className="w-4 h-4" />

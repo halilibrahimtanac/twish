@@ -95,9 +95,13 @@ export function twishDbQuery() {
         mediaPreview: quotedOriginalTwish.mediaPreview
       },
       originalLikes: sql<number>`coalesce((select like_count from like_counts where twish_id = ${twishes.originalTwishId}), 0)`.mapWith(Number),
-      originalLikedByUserIds: sql<string[]>`(select liked_by_user_ids from like_counts where twish_id = ${twishes.originalTwishId})`.mapWith((csv) => csv ? csv.split(',').filter(Boolean) : []),
+      originalLikedByUserIds: sql<string[]>`(select liked_by_user_ids from like_counts where twish_id = ${twishes.originalTwishId})`.mapWith(
+        (value): string[] => Array.isArray(value) ? value : value ? String(value).split(',').filter(Boolean) : []
+      ),
       originalRetwishes: sql<number>`coalesce((select retwish_count from retwish_counts where original_twish_id = ${twishes.originalTwishId}), 0)`.mapWith(Number),
-      originalRetwishedByUserIds: sql<string[]>`(select retwished_by_user_ids from retwish_counts where original_twish_id = ${twishes.originalTwishId})`.mapWith((csv) => csv ? csv.split(',').filter(Boolean) : []),
+      originalRetwishedByUserIds: sql<string[]>`(select retwished_by_user_ids from retwish_counts where original_twish_id = ${twishes.originalTwishId})`.mapWith(
+        (value): string[] => Array.isArray(value) ? value : value ? String(value).split(',').filter(Boolean) : []
+      ),
       originalComments: sql<number>`coalesce((select reply_count from reply_counts where original_twish_id = ${twishes.originalTwishId}), 0)`.mapWith(Number),
       
       parentTwishId: twishes.parentTwishId,
@@ -235,7 +239,7 @@ export const likeTwishService = async (input: LikeTwishInput) => {
 };
 
 export const reTwishService = async (input: ReTwishInput) => {
-  const { content, originalTwishId, parentTwishId, userId, type } = input;
+  const { content, originalTwishId, parentTwishId, userId, type, hasMedia, mediaCount } = input;
   
   // First, verify that the original twish exists
   const originalTwish = await db
@@ -269,6 +273,8 @@ export const reTwishService = async (input: ReTwishInput) => {
       originalTwishId,
       parentTwishId,
       type,
+      hasMedia: hasMedia ? 1 : 0,
+      mediaCount,
   })
     .returning();
 
