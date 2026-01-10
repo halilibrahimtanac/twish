@@ -1,30 +1,51 @@
-import db from "@/db";
-import { follows, pictures, users, type User } from "@/db/schema";
-import { eq, or, sql } from "drizzle-orm";
+﻿import type {
+  AddUserInput,
+  GetUserProfileInfosInput,
+  LoginInput,
+  SaveUserInputType,
+} from "./user.input";
+import type { User } from "@/db/schema";
 import { hashPassword, comparePassword } from "@/lib/password";
 import { createAndSetSession } from "@/lib/auth";
-import type { AddUserInput, GetUserProfileInfosInput, LoginInput, SaveUserInputType } from "./user.input";
 import { cookies } from "next/headers";
-import { alias } from "drizzle-orm/pg-core";
+import { ParamType, queryRaw, SqlParam } from "@/db/neon";
+
+const USER_RETURNING = `
+  id,
+  email,
+  username,
+  name,
+  password,
+  bio,
+  profile_picture_id AS "profilePictureId",
+  background_picture_id AS "backgroundPictureId",
+  location,
+  created_at AS "createdAt",
+  updated_at AS "updatedAt"
+`;
 
 export async function getAllUsers() {
-  return db.select({ id: users.id, name: users.name }).from(users);
+  return queryRaw<{ id: string; name: string }>(
+    `
+    SELECT id, name
+    FROM users
+    `
+  );
 }
 
 export async function createUser(input: AddUserInput): Promise<User> {
   const hashedPassword = await hashPassword(input.password);
+  const id = crypto.randomUUID();
 
   try {
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        id: crypto.randomUUID(),
-        name: input.name,
-        username: input.username,
-        email: input.email,
-        password: hashedPassword,
-      })
-      .returning();
+    const [newUser] = await queryRaw<User>(
+      `
+      INSERT INTO users (id, name, username, email, password)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING ${USER_RETURNING}
+      `,
+      [id, input.name, input.username, input.email, hashedPassword]
+    );
 
     return newUser;
   } catch (err) {
@@ -32,22 +53,34 @@ export async function createUser(input: AddUserInput): Promise<User> {
       throw err;
     }
 
-    const message = (err as Error).message;
+    const error = err as { message?: string; code?: string; constraint?: string };
+    const message = error.message ?? "";
+    const constraint = error.constraint ?? "";
 
-    if (message.includes("users.email")) {
-      throw new Error(
-        JSON.stringify({
-          email: "An account with that email already exists.",
-        })
-      );
-    }
+    if (error.code === "23505") {
+      if (
+        constraint.includes("users_email") ||
+        message.includes("users_email") ||
+        message.includes("users.email")
+      ) {
+        throw new Error(
+          JSON.stringify({
+            email: "An account with that email already exists.",
+          })
+        );
+      }
 
-    if (message.includes("users.username")) {
-      throw new Error(
-        JSON.stringify({
-          username: "That username is already taken.",
-        })
-      );
+      if (
+        constraint.includes("users_username") ||
+        message.includes("users_username") ||
+        message.includes("users.username")
+      ) {
+        throw new Error(
+          JSON.stringify({
+            username: "That username is already taken.",
+          })
+        );
+      }
     }
 
     throw new Error(
@@ -59,28 +92,38 @@ export async function createUser(input: AddUserInput): Promise<User> {
 }
 
 export async function loginUser(input: LoginInput) {
-  const profilePics = alias(pictures, "profile_pics");
-  const backgroundPics = alias(pictures, "background_pics");
-
-  const foundUser = await db
-    .select({
-      id: users.id,
-      name: users.name,
-      username: users.username,
-      password: users.password,
-      email: users.email,
-      bio: users.bio,
-      profilePictureUrl: profilePics.url,
-      backgroundPictureUrl: backgroundPics.url,
-    })
-    .from(users)
-    .leftJoin(profilePics, eq(users.profilePictureId, profilePics.id))
-    .leftJoin(backgroundPics, eq(users.backgroundPictureId, backgroundPics.id))
-    .where(eq(users.email, input.email))
-    .limit(1);
+  const foundUser = await queryRaw<{
+    id: string;
+    name: string;
+    username: string;
+    password: string;
+    email: string;
+    bio: string | null;
+    profilePictureUrl: string | null;
+    backgroundPictureUrl: string | null;
+  }>(
+    `
+    SELECT
+      users.id,
+      users.name,
+      users.username,
+      users.password,
+      users.email,
+      users.bio,
+      profile_pics.url AS "profilePictureUrl",
+      background_pics.url AS "backgroundPictureUrl"
+    FROM users
+    LEFT JOIN pictures AS profile_pics
+      ON users.profile_picture_id = profile_pics.id
+    LEFT JOIN pictures AS background_pics
+      ON users.background_picture_id = background_pics.id
+    WHERE users.email = $1
+    LIMIT 1
+    `,
+    [input.email]
+  );
 
   if (foundUser.length === 0) {
-    // Throw error as an object with the field as key
     throw new Error(JSON.stringify({ email: "No such user found" }));
   }
 
@@ -89,11 +132,14 @@ export async function loginUser(input: LoginInput) {
   const isPasswordValid = await comparePassword(input.password, user.password);
 
   if (!isPasswordValid) {
-    // Throw error as an object with the field as key
     throw new Error(JSON.stringify({ password: "Password is incorrect" }));
   }
 
-  await createAndSetSession(user);
+  await createAndSetSession({
+    id: user.id,
+    email: user.email,
+    username: user.username,
+  });
 
   return {
     success: true,
@@ -130,67 +176,83 @@ export async function getUserProfileInfos(input: GetUserProfileInfosInput) {
       throw new Error(`Invalid or unauthorized field requested: ${field}`);
     }
 
-    const foundUser = await db
-      .select({
-        [field]: users[field],
-      })
-      .from(users)
-      .where(or(eq(users.id, id), eq(users.username, id)))
-      .limit(1);
+    const fieldMap: Record<(typeof ALLOWED_SINGLE_FIELDS)[number], string> = {
+      id: "id",
+      name: "name",
+      username: "username",
+    };
+
+    const column = fieldMap[field];
+
+    const foundUser = await queryRaw<Record<string, string>>(
+      `
+      SELECT ${column} AS "${field}"
+      FROM users
+      WHERE id = $1 OR username = $1
+      LIMIT 1
+      `,
+      [id]
+    );
 
     return foundUser[0];
   }
 
-  const profilePics = alias(pictures, "profile_pics");
-  const backgroundPics = alias(pictures, "background_pics");
-  
-  const followerCounts = db.$with("follower_counts").as(
-    db.select({
-      followingId: follows.followingId,
-      followerCount: sql<number>`count(${follows.followingId})`.as("followerCount")
-    })
-    .from(follows)
-    .leftJoin(users, or(eq(users.id, id), eq(users.username, id)))
-    .where(eq(follows.followingId, users.id))
-    .groupBy(follows.followingId)
+  const foundUser = await queryRaw<{
+    id: string;
+    email: string;
+    name: string;
+    bio: string | null;
+    username: string;
+    profilePictureUrl: string | null;
+    backgroundPictureUrl: string | null;
+    location: string | null;
+    followerCount: number;
+    followingCount: number;
+  }>(
+    `
+    SELECT
+      users.id,
+      users.email,
+      users.name,
+      users.bio,
+      users.username,
+      profile_pics.url AS "profilePictureUrl",
+      background_pics.url AS "backgroundPictureUrl",
+      users.location,
+      COALESCE(
+        (
+          SELECT COUNT(*)
+          FROM follows
+          WHERE follows.following_id = users.id
+        ),
+        0
+      ) AS "followerCount",
+      COALESCE(
+        (
+          SELECT COUNT(*)
+          FROM follows
+          WHERE follows.follower_id = users.id
+        ),
+        0
+      ) AS "followingCount"
+    FROM users
+    LEFT JOIN pictures AS profile_pics
+      ON users.profile_picture_id = profile_pics.id
+    LEFT JOIN pictures AS background_pics
+      ON users.background_picture_id = background_pics.id
+    WHERE users.id = $1 OR users.username = $1
+    LIMIT 1
+    `,
+    [id]
   );
-  
-  const followingCounts = db.$with("following_counts").as(
-    db.select({
-      followerId: follows.followerId,
-      followingCount: sql<number>`count(${follows.followerId})`.as("followingCount")
-    })
-    .from(follows)
-    .leftJoin(users, or(eq(users.id, id), eq(users.username, id)))
-    .where(eq(follows.followerId, users.id))
-    .groupBy(follows.followerId)
-  );
-  
-  const foundUser = await db.with(followerCounts, followingCounts)
-    .select({
-        id: users.id,
-        email: users.email,
-        name: users.name,
-        bio: users.bio,
-        username: users.username,
-        profilePictureUrl: profilePics.url,
-        backgroundPictureUrl: backgroundPics.url,
-        location: users.location,
-        followerCount: sql<number>`COALESCE(${followerCounts.followerCount}, 0)`,
-        followingCount: sql<number>`COALESCE(${followingCounts.followingCount}, 0)`
-    })
-    .from(users)
-    .leftJoin(profilePics, eq(users.profilePictureId, profilePics.id))
-    .leftJoin(backgroundPics, eq(users.backgroundPictureId, backgroundPics.id))
-    .leftJoin(followerCounts, eq(followerCounts.followingId, users.id))
-    .leftJoin(followingCounts, eq(followingCounts.followerId, users.id))
-    .where(or(eq(users.id, id), eq(users.username, id)))
-    .limit(1);
 
   return foundUser[0];
 }
 
-export async function saveUserInfoService(userId: string, input: SaveUserInputType) {
+export async function saveUserInfoService(
+  userId: string,
+  input: SaveUserInputType
+) {
   const updateData: {
     name?: string;
     bio?: string | null;
@@ -206,45 +268,95 @@ export async function saveUserInfoService(userId: string, input: SaveUserInputTy
   if (input.bio !== undefined) {
     updateData.bio = input.bio;
   }
+
   if (input.location !== undefined) {
     updateData.location = input.location;
   }
 
   if (input.profilePictureUrl) {
-    const newProfilePictureRow = await db
-      .insert(pictures)
-      .values({
-        id: crypto.randomUUID(),
-        type: "profile_picture",
-        url: input.profilePictureUrl,
-        uploadedBy: userId,
-      })
-      .returning({ insertedId: pictures.id });
+    const profileId = crypto.randomUUID();
+    const [newProfilePictureRow] = await queryRaw<{ insertedId: string }>(
+      `
+      INSERT INTO pictures (id, type, url, uploaded_by)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id AS "insertedId"
+      `,
+      [profileId, "profile_picture", input.profilePictureUrl, userId]
+    );
 
-    updateData.profilePictureId = newProfilePictureRow[0].insertedId;
+    updateData.profilePictureId = newProfilePictureRow.insertedId;
   }
 
   if (input.backgroundPictureUrl) {
-    const newBackgroundPictureRow = await db
-      .insert(pictures)
-      .values({
-        id: crypto.randomUUID(),
-        type: "background_picture",
-        url: input.backgroundPictureUrl,
-        uploadedBy: userId,
-      })
-      .returning({ insertedId: pictures.id });
-      
-    updateData.backgroundPictureId = newBackgroundPictureRow[0].insertedId;
+    const backgroundId = crypto.randomUUID();
+    const [newBackgroundPictureRow] = await queryRaw<{ insertedId: string }>(
+      `
+      INSERT INTO pictures (id, type, url, uploaded_by)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id AS "insertedId"
+      `,
+      [backgroundId, "background_picture", input.backgroundPictureUrl, userId]
+    );
+
+    updateData.backgroundPictureId = newBackgroundPictureRow.insertedId;
   }
 
   if (Object.keys(updateData).length === 0) {
-    return await db.query.users.findFirst({ where: eq(users.id, userId) });
+    const [existingUser] = await queryRaw<User>(
+      `
+      SELECT ${USER_RETURNING}
+      FROM users
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [userId]
+    );
+
+    return existingUser;
   }
 
-  return await db
-    .update(users)
-    .set(updateData)
-    .where(eq(users.id, userId))
-    .returning();
+  const setClauses: string[] = [];
+  const params: SqlParam[] = [];
+
+  const addParam = (value: ParamType) => {
+    params.push(value);
+    return `$${params.length}`;
+  };
+
+  if (updateData.name !== undefined) {
+    setClauses.push(`name = ${addParam(updateData.name)}`);
+  }
+
+  if (updateData.bio !== undefined) {
+    setClauses.push(`bio = ${addParam(updateData.bio)}`);
+  }
+
+  if (updateData.location !== undefined) {
+    setClauses.push(`location = ${addParam(updateData.location)}`);
+  }
+
+  if (updateData.profilePictureId !== undefined) {
+    setClauses.push(
+      `profile_picture_id = ${addParam(updateData.profilePictureId)}`
+    );
+  }
+
+  if (updateData.backgroundPictureId !== undefined) {
+    setClauses.push(
+      `background_picture_id = ${addParam(updateData.backgroundPictureId)}`
+    );
+  }
+
+  params.push(userId);
+  const whereParam = `$${params.length}`;
+
+  return queryRaw<User>(
+    `
+    UPDATE users
+    SET ${setClauses.join(", ")}
+    WHERE id = ${whereParam}
+    RETURNING ${USER_RETURNING}
+    `,
+    params
+  );
 }

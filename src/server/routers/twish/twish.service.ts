@@ -1,348 +1,700 @@
-import db from "@/db";
-import { GetCommentsByTwishIdInput, GetFeedTwishes, LikeTwishInput, ReTwishInput, TwishInputType, UpdateTwishMediaPreviewInput } from "./twish.input";
-import { likes, pictures, twishes, users } from "@/db/schema";
-import { and, desc, eq, isNotNull, or, SQL, sql } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
+﻿import {
+  GetCommentsByTwishIdInput,
+  GetFeedTwishes,
+  LikeTwishInput,
+  ReTwishInput,
+  TwishInputType,
+  UpdateTwishMediaPreviewInput,
+} from "./twish.input";
+import { ParamType, queryRaw, SqlParam } from "@/db/neon";
 
-export function twishDbQuery() {
+type TwishRow = {
+  id: string;
+  content: string;
+  createdAt: unknown;
+  type: string;
+  authorId: string;
+  authorName: string;
+  authorUsername: string;
+  authorAvatarUrl: string | null;
+  likes: unknown;
+  likedByUserIds: unknown;
+  comments: unknown;
+  retwishes: unknown;
+  retwishedByUserIds: unknown;
+  originalTwishId: string | null;
+  originalTwishContent: string | null;
+  originalTwishCreatedAt: unknown | null;
+  originalTwishType: string | null;
+  originalAuthorId: string | null;
+  originalAuthorName: string | null;
+  originalAuthorUsername: string | null;
+  originalAuthorAvatarUrl: string | null;
+  quotedOriginalTwishId: string | null;
+  quotedOriginalTwishContent: string | null;
+  quotedOriginalTwishCreatedAt: unknown | null;
+  quotedOriginalAuthorId: string | null;
+  quotedOriginalAuthorName: string | null;
+  quotedOriginalAuthorUsername: string | null;
+  quotedOriginalAuthorAvatarUrl: string | null;
+  quotedOriginalMediaPreview: string | null;
+  originalLikes: unknown;
+  originalLikedByUserIds: unknown;
+  originalRetwishes: unknown;
+  originalRetwishedByUserIds: unknown;
+  originalComments: unknown;
+  parentTwishId: string | null;
+  parentTwishIdValue: string | null;
+  parentTwishContent: string | null;
+  parentTwishCreatedAt: unknown | null;
+  parentAuthorId: string | null;
+  parentAuthorName: string | null;
+  parentAuthorUsername: string | null;
+  parentAuthorAvatarUrl: string | null;
+  mediaPreview: string | null;
+};
 
-  const replyCounts = db.$with("reply_counts").as(
-    db.select({
-        originalTwishId: twishes.originalTwishId,
-        replyCount: sql<number>`count(${twishes.id})`.as('reply_count')
-      })
-      .from(twishes)
-      .where(and(
-        eq(twishes.type, 'comment'),
-        isNotNull(twishes.originalTwishId)
-      ))
-      .groupBy(twishes.originalTwishId)
-  );
+type TwishResult = {
+  id: string;
+  content: string;
+  createdAt: unknown;
+  type: string;
+  authorId: string;
+  authorName: string;
+  authorUsername: string;
+  authorAvatarUrl: string | null;
+  likes: number;
+  likedByUserIds: string[];
+  comments: number;
+  retwishes: number;
+  retwishedByUserIds: string[];
+  originalTwish: {
+    id: string | null;
+    content: string | null;
+    createdAt: unknown | null;
+    authorId: string | null;
+    authorName: string | null;
+    authorUsername: string | null;
+    authorAvatarUrl: string | null;
+    type: string | null;
+  };
+  originalQuotedTwish: {
+    id: string | null;
+    content: string | null;
+    createdAt: unknown | null;
+    authorId: string | null;
+    authorName: string | null;
+    authorUsername: string | null;
+    authorAvatarUrl: string | null;
+    mediaPreview: string | null;
+  };
+  originalLikes: number;
+  originalLikedByUserIds: string[];
+  originalRetwishes: number;
+  originalRetwishedByUserIds: string[];
+  originalComments: number;
+  parentTwishId: string | null;
+  parentTwish: {
+    id: string | null;
+    content: string | null;
+    createdAt: unknown | null;
+    authorId: string | null;
+    authorName: string | null;
+    authorUsername: string | null;
+    authorAvatarUrl: string | null;
+  };
+  mediaPreview: string | null;
+};
 
+type TwishQueryOptions = {
+  typeFilter?: string[];
+  userId?: string;
+  hasMedia?: boolean;
+  twishId?: string;
+  commentParentId?: string;
+  commentOriginalId?: string;
+  commentOnly?: boolean;
+  likedByUserId?: string;
+  contentSearch?: {
+    mode: "tag" | "word";
+    query: string;
+  };
+  limit?: number;
+};
 
-  const likeCounts = db.$with("like_counts").as(
-    db.select({
-        twishId: likes.twishId,
-        likeCount: sql<number>`count(${likes.userId})`.as("like_count"),
-        likedByUserIds: sql<string[]>`array_agg(${likes.userId})`.as("liked_by_user_ids"),
-      })
-      .from(likes)
-      .groupBy(likes.twishId)
-  );
+const toNumber = (value: unknown) => (value == null ? 0 : Number(value));
 
+const normalizeStringArray = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value
+      .filter((item) => item != null && String(item).length > 0)
+      .map((item) => String(item));
+  }
 
-  const retwishCounts = db.$with("retwish_counts").as(
-    db.select({
-        originalTwishId: twishes.originalTwishId,
-        retwishCount: sql<number>`count(${twishes.id})`.as("retwish_count"),
-        retwishedByUserIds: sql<string[]>`array_agg(${twishes.authorId})`.as("retwished_by_user_ids"),
-      })
-      .from(twishes)
-      .where(and(
-        eq(twishes.type, 'retwish'),
-        isNotNull(twishes.originalTwishId)
-      ))
-      .groupBy(twishes.originalTwishId)
-  );
-  
-  const originalTwish = alias(twishes, "original_twish");
-  const parentTwish = alias(twishes, "parent_twish");
-  const originalAuthor = alias(users, "original_author");
-  const parentAuthor = alias(users, "parent_author");
-  const mainProfilePictures = alias(pictures, "main_profile_pictures");
-  const originalProfilePictures = alias(pictures, "original_profile_pictures");
-  const parentProfilePictures = alias(pictures, "parent_profile_pictures");
-  const quotedOriginalTwish = alias(twishes, "quoted_original_twish");
-  const quotedOriginalAuthor = alias(users, "quoted_original_author");
-  const quotedOriginalProfilePictures = alias(pictures, "quoted_original_profile_pictures");
+  if (value == null) {
+    return [];
+  }
 
-  return db
-    .with(likeCounts, retwishCounts, replyCounts)
-    .select({
-      id: twishes.id,
-      content: twishes.content,
-      createdAt: twishes.createdAt,
-      type: twishes.type,
-      authorId: users.id,
-      authorName: users.name,
-      authorUsername: users.username,
-      authorAvatarUrl: mainProfilePictures.url,
+  const raw = String(value).trim();
+  if (!raw) {
+    return [];
+  }
 
-      likes: sql<number>`coalesce(${likeCounts.likeCount}, 0)`.mapWith(Number),
-      likedByUserIds: likeCounts.likedByUserIds,
-      comments: sql<number>`coalesce(${replyCounts.replyCount}, 0)`.mapWith(Number),
-      retwishes: sql<number>`coalesce(${retwishCounts.retwishCount}, 0)`.mapWith(Number),
-      retwishedByUserIds: retwishCounts.retwishedByUserIds,
+  const trimmed =
+    raw.startsWith("{") && raw.endsWith("}") ? raw.slice(1, -1) : raw;
 
-      originalTwish: {
-        id: originalTwish.id,
-        content: originalTwish.content,
-        createdAt: originalTwish.createdAt,
-        authorId: originalAuthor.id,
-        authorName: originalAuthor.name,
-        authorUsername: originalAuthor.username,
-        authorAvatarUrl: originalProfilePictures.url,
-        type: originalTwish.type,
-      },
-      originalQuotedTwish: {
-        id: quotedOriginalTwish.id,
-        content: quotedOriginalTwish.content,
-        createdAt: quotedOriginalTwish.createdAt,
-        authorId: quotedOriginalAuthor.id,
-        authorName: quotedOriginalAuthor.name,
-        authorUsername: quotedOriginalAuthor.username,
-        authorAvatarUrl: quotedOriginalProfilePictures.url,
-        mediaPreview: quotedOriginalTwish.mediaPreview
-      },
-      originalLikes: sql<number>`coalesce((select like_count from like_counts where twish_id = ${twishes.originalTwishId}), 0)`.mapWith(Number),
-      originalLikedByUserIds: sql<string[]>`(select liked_by_user_ids from like_counts where twish_id = ${twishes.originalTwishId})`.mapWith(
-        (value): string[] => Array.isArray(value) ? value : value ? String(value).split(',').filter(Boolean) : []
-      ),
-      originalRetwishes: sql<number>`coalesce((select retwish_count from retwish_counts where original_twish_id = ${twishes.originalTwishId}), 0)`.mapWith(Number),
-      originalRetwishedByUserIds: sql<string[]>`(select retwished_by_user_ids from retwish_counts where original_twish_id = ${twishes.originalTwishId})`.mapWith(
-        (value): string[] => Array.isArray(value) ? value : value ? String(value).split(',').filter(Boolean) : []
-      ),
-      originalComments: sql<number>`coalesce((select reply_count from reply_counts where original_twish_id = ${twishes.originalTwishId}), 0)`.mapWith(Number),
-      
-      parentTwishId: twishes.parentTwishId,
-      parentTwish: {
-        id: parentTwish.id,
-        content: parentTwish.content,
-        createdAt: parentTwish.createdAt,
-        authorId: parentAuthor.id,
-        authorName: parentAuthor.name,
-        authorUsername: parentAuthor.username,
-        authorAvatarUrl: parentProfilePictures.url,
-      },
-      mediaPreview: twishes.mediaPreview
-    })
-    .from(twishes)
-    .innerJoin(users, eq(twishes.authorId, users.id))
-    .leftJoin(likeCounts, eq(likeCounts.twishId, twishes.id))
-    .leftJoin(replyCounts, eq(replyCounts.originalTwishId, twishes.id))
-    .leftJoin(retwishCounts, eq(retwishCounts.originalTwishId, twishes.id))
-    
-    .leftJoin(originalTwish, eq(twishes.originalTwishId, originalTwish.id))
-    .leftJoin(originalAuthor, eq(originalTwish.authorId, originalAuthor.id))
-    .leftJoin(parentTwish, eq(parentTwish.id, twishes.parentTwishId))
-    .leftJoin(parentAuthor, eq(parentAuthor.id, parentTwish.authorId))
-    .leftJoin(mainProfilePictures, eq(mainProfilePictures.id, users.profilePictureId))
-    .leftJoin(originalProfilePictures, eq(originalProfilePictures.id, originalAuthor.profilePictureId))
-    .leftJoin(parentProfilePictures, eq(parentProfilePictures.id, parentAuthor.profilePictureId))
-    .leftJoin(quotedOriginalTwish, eq(originalTwish.originalTwishId, quotedOriginalTwish.id))
-    .leftJoin(quotedOriginalAuthor, eq(quotedOriginalTwish.authorId, quotedOriginalAuthor.id))
-    .leftJoin(quotedOriginalProfilePictures, eq(quotedOriginalProfilePictures.id, quotedOriginalAuthor.profilePictureId))
-    .orderBy(desc(twishes.createdAt));
-}
+  if (!trimmed) {
+    return [];
+  }
+
+  return trimmed.split(",").filter(Boolean);
+};
+
+const parseMediaPreview = (value: string | null) =>
+  value ? JSON.parse(value) : null;
+
+const mapTwishRow = (row: TwishRow): TwishResult => ({
+  id: row.id,
+  content: row.content,
+  createdAt: row.createdAt,
+  type: row.type,
+  authorId: row.authorId,
+  authorName: row.authorName,
+  authorUsername: row.authorUsername,
+  authorAvatarUrl: row.authorAvatarUrl,
+  likes: toNumber(row.likes),
+  likedByUserIds: normalizeStringArray(row.likedByUserIds),
+  comments: toNumber(row.comments),
+  retwishes: toNumber(row.retwishes),
+  retwishedByUserIds: normalizeStringArray(row.retwishedByUserIds),
+  originalTwish: {
+    id: row.originalTwishId,
+    content: row.originalTwishContent,
+    createdAt: row.originalTwishCreatedAt,
+    authorId: row.originalAuthorId,
+    authorName: row.originalAuthorName,
+    authorUsername: row.originalAuthorUsername,
+    authorAvatarUrl: row.originalAuthorAvatarUrl,
+    type: row.originalTwishType,
+  },
+  originalQuotedTwish: {
+    id: row.quotedOriginalTwishId,
+    content: row.quotedOriginalTwishContent,
+    createdAt: row.quotedOriginalTwishCreatedAt,
+    authorId: row.quotedOriginalAuthorId,
+    authorName: row.quotedOriginalAuthorName,
+    authorUsername: row.quotedOriginalAuthorUsername,
+    authorAvatarUrl: row.quotedOriginalAuthorAvatarUrl,
+    mediaPreview: row.quotedOriginalMediaPreview,
+  },
+  originalLikes: toNumber(row.originalLikes),
+  originalLikedByUserIds: normalizeStringArray(row.originalLikedByUserIds),
+  originalRetwishes: toNumber(row.originalRetwishes),
+  originalRetwishedByUserIds: normalizeStringArray(
+    row.originalRetwishedByUserIds
+  ),
+  originalComments: toNumber(row.originalComments),
+  parentTwishId: row.parentTwishId,
+  parentTwish: {
+    id: row.parentTwishIdValue,
+    content: row.parentTwishContent,
+    createdAt: row.parentTwishCreatedAt,
+    authorId: row.parentAuthorId,
+    authorName: row.parentAuthorName,
+    authorUsername: row.parentAuthorUsername,
+    authorAvatarUrl: row.parentAuthorAvatarUrl,
+  },
+  mediaPreview: row.mediaPreview,
+});
+
+const formatTwish = (twish: TwishResult) => ({
+  ...twish,
+  originalQuotedTwish: {
+    ...twish.originalQuotedTwish,
+    mediaPreview: parseMediaPreview(twish.originalQuotedTwish.mediaPreview),
+  },
+  mediaPreview: parseMediaPreview(twish.mediaPreview),
+});
+
+const buildTwishQuery = (options: TwishQueryOptions) => {
+  const params: SqlParam[] = [];
+  const whereClauses: string[] = [];
+
+  const addParam = (value: ParamType) => {
+    params.push(value);
+    return `$${params.length}`;
+  };
+
+  let likedJoin = "";
+  if (options.likedByUserId) {
+    likedJoin = `INNER JOIN likes AS liked_filter
+      ON liked_filter.twish_id = t.id
+     AND liked_filter.user_id = ${addParam(options.likedByUserId)}`;
+  }
+
+  if (options.typeFilter && options.typeFilter.length > 0) {
+    const placeholders = options.typeFilter.map(addParam).join(", ");
+    whereClauses.push(`t.type IN (${placeholders})`);
+  }
+
+  if (options.userId) {
+    whereClauses.push(`t.author_id = ${addParam(options.userId)}`);
+  }
+
+  if (options.hasMedia !== undefined) {
+    whereClauses.push(
+      `t.has_media = ${addParam(options.hasMedia ? 1 : 0)}`
+    );
+  }
+
+  if (options.twishId) {
+    whereClauses.push(`t.id = ${addParam(options.twishId)}`);
+  }
+
+  if (options.commentParentId) {
+    whereClauses.push(
+      `t.parent_twish_id = ${addParam(options.commentParentId)}`
+    );
+  }
+
+  if (options.commentOriginalId) {
+    whereClauses.push(
+      `t.original_twish_id = ${addParam(options.commentOriginalId)}`
+    );
+  }
+
+  if (options.commentOnly) {
+    whereClauses.push(`t.type = ${addParam("comment")}`);
+  }
+
+  if (options.contentSearch) {
+    const lowered = options.contentSearch.query.toLowerCase();
+    const pattern =
+      options.contentSearch.mode === "tag"
+        ? `%#${lowered}%`
+        : `%${lowered}%`;
+    whereClauses.push(`LOWER(t.content) LIKE ${addParam(pattern)}`);
+  }
+
+  const whereClause =
+    whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+  const limitClause =
+    options.limit !== undefined ? `LIMIT ${addParam(options.limit)}` : "";
+
+  const query = `
+    WITH reply_counts AS (
+      SELECT
+        original_twish_id,
+        COUNT(id) AS reply_count
+      FROM twishes
+      WHERE type = 'comment'
+        AND original_twish_id IS NOT NULL
+      GROUP BY original_twish_id
+    ),
+    like_counts AS (
+      SELECT
+        twish_id,
+        COUNT(user_id) AS like_count,
+        ARRAY_AGG(user_id) AS liked_by_user_ids
+      FROM likes
+      GROUP BY twish_id
+    ),
+    retwish_counts AS (
+      SELECT
+        original_twish_id,
+        COUNT(id) AS retwish_count,
+        ARRAY_AGG(author_id) AS retwished_by_user_ids
+      FROM twishes
+      WHERE type = 'retwish'
+        AND original_twish_id IS NOT NULL
+      GROUP BY original_twish_id
+    )
+    SELECT
+      t.id,
+      t.content,
+      t.created_at AS "createdAt",
+      t.type,
+      u.id AS "authorId",
+      u.name AS "authorName",
+      u.username AS "authorUsername",
+      main_pp.url AS "authorAvatarUrl",
+      COALESCE(lc.like_count, 0) AS likes,
+      lc.liked_by_user_ids AS "likedByUserIds",
+      COALESCE(rc.reply_count, 0) AS comments,
+      COALESCE(rtw.retwish_count, 0) AS retwishes,
+      rtw.retwished_by_user_ids AS "retwishedByUserIds",
+      ot.id AS "originalTwishId",
+      ot.content AS "originalTwishContent",
+      ot.created_at AS "originalTwishCreatedAt",
+      ot.type AS "originalTwishType",
+      oa.id AS "originalAuthorId",
+      oa.name AS "originalAuthorName",
+      oa.username AS "originalAuthorUsername",
+      opp.url AS "originalAuthorAvatarUrl",
+      qt.id AS "quotedOriginalTwishId",
+      qt.content AS "quotedOriginalTwishContent",
+      qt.created_at AS "quotedOriginalTwishCreatedAt",
+      qo.id AS "quotedOriginalAuthorId",
+      qo.name AS "quotedOriginalAuthorName",
+      qo.username AS "quotedOriginalAuthorUsername",
+      qpp.url AS "quotedOriginalAuthorAvatarUrl",
+      qt.media_preview AS "quotedOriginalMediaPreview",
+      COALESCE(
+        (SELECT like_count FROM like_counts WHERE twish_id = t.original_twish_id),
+        0
+      ) AS "originalLikes",
+      (
+        SELECT liked_by_user_ids
+        FROM like_counts
+        WHERE twish_id = t.original_twish_id
+      ) AS "originalLikedByUserIds",
+      COALESCE(
+        (
+          SELECT retwish_count
+          FROM retwish_counts
+          WHERE original_twish_id = t.original_twish_id
+        ),
+        0
+      ) AS "originalRetwishes",
+      (
+        SELECT retwished_by_user_ids
+        FROM retwish_counts
+        WHERE original_twish_id = t.original_twish_id
+      ) AS "originalRetwishedByUserIds",
+      COALESCE(
+        (
+          SELECT reply_count
+          FROM reply_counts
+          WHERE original_twish_id = t.original_twish_id
+        ),
+        0
+      ) AS "originalComments",
+      t.parent_twish_id AS "parentTwishId",
+      pt.id AS "parentTwishIdValue",
+      pt.content AS "parentTwishContent",
+      pt.created_at AS "parentTwishCreatedAt",
+      pa.id AS "parentAuthorId",
+      pa.name AS "parentAuthorName",
+      pa.username AS "parentAuthorUsername",
+      ppp.url AS "parentAuthorAvatarUrl",
+      t.media_preview AS "mediaPreview"
+    FROM twishes t
+    JOIN users u ON t.author_id = u.id
+    ${likedJoin}
+    LEFT JOIN like_counts lc ON lc.twish_id = t.id
+    LEFT JOIN reply_counts rc ON rc.original_twish_id = t.id
+    LEFT JOIN retwish_counts rtw ON rtw.original_twish_id = t.id
+    LEFT JOIN twishes ot ON t.original_twish_id = ot.id
+    LEFT JOIN users oa ON ot.author_id = oa.id
+    LEFT JOIN twishes pt ON pt.id = t.parent_twish_id
+    LEFT JOIN users pa ON pa.id = pt.author_id
+    LEFT JOIN pictures main_pp ON main_pp.id = u.profile_picture_id
+    LEFT JOIN pictures opp ON opp.id = oa.profile_picture_id
+    LEFT JOIN pictures ppp ON ppp.id = pa.profile_picture_id
+    LEFT JOIN twishes qt ON ot.original_twish_id = qt.id
+    LEFT JOIN users qo ON qt.author_id = qo.id
+    LEFT JOIN pictures qpp ON qpp.id = qo.profile_picture_id
+    ${whereClause}
+    ORDER BY t.created_at DESC
+    ${limitClause}
+  `;
+
+  return { query, params };
+};
+
+const fetchTwishes = async (options: TwishQueryOptions) => {
+  const { query, params } = buildTwishQuery(options);
+  const rows = await queryRaw<TwishRow>(query, params);
+  return rows.map(mapTwishRow);
+};
 
 export async function getFeedTwishes(input: GetFeedTwishes) {
   const { userId, type } = input;
-  
 
-  const queryBuilder = twishDbQuery();
+  const options: TwishQueryOptions = {
+    typeFilter: ["quote", "retwish", "original"],
+    limit: 20,
+  };
 
-
-  const conditions: SQL[] = [
-    or(
-      eq(twishes.type, "quote"), 
-      eq(twishes.type, "retwish"), 
-      eq(twishes.type, "original")
-    )!
-  ];
-  
   if (type === "likes" && userId) {
-    queryBuilder.innerJoin(likes, and(
-      eq(likes.twishId, twishes.id),
-      eq(likes.userId, userId)
-    ));
+    options.likedByUserId = userId;
   } else {
     if (userId) {
-      conditions.push(eq(twishes.authorId, userId));
+      options.userId = userId;
     }
     if (type === "media") {
-      conditions.push(eq(twishes.hasMedia, 1));
+      options.hasMedia = true;
     }
   }
 
-  if(conditions.length > 0) {
-      queryBuilder.where(and(...conditions));
-  }
+  const result = await fetchTwishes(options);
 
-  const result = await queryBuilder.limit(20);
-
-
-  return result.map(tw => ({
-    ...tw,
-    likedByUserIds: tw.likedByUserIds || [],
-    retwishedByUserIds: tw.retwishedByUserIds || [],
-    originalLikedByUserIds: tw.originalLikedByUserIds || [],
-    originalRetwishedByUserIds: tw.originalRetwishedByUserIds || [],
-    originalQuotedTwish:
-    { ...tw.originalQuotedTwish, 
-      mediaPreview: tw.originalQuotedTwish.mediaPreview ? 
-      JSON.parse(tw.originalQuotedTwish.mediaPreview) : null 
-    },
-    mediaPreview: tw.mediaPreview ? JSON.parse(tw.mediaPreview) : null
-  }));
+  return result.map(formatTwish);
 }
 
-export const newTwishService = async (userId: string, input: TwishInputType) => {
-  const { content, hasMedia, mediaCount } = input;
+export const searchTwishesByContent = async (
+  query: string,
+  mode: "tag" | "word"
+) => {
+  const result = await fetchTwishes({
+    typeFilter: ["quote", "retwish", "original"],
+    contentSearch: { query, mode },
+    limit: 20,
+  });
 
-  return (
-    await db
-      .insert(twishes)
-      .values({
-        id: crypto.randomUUID(),
-        content,
-        authorId: userId,
-        hasMedia: hasMedia ? 1 : 0,
-        mediaCount,
-      })
-      .returning()
-  )[0];
+  return result.map(formatTwish);
+};
+
+export const newTwishService = async (
+  userId: string,
+  input: TwishInputType
+) => {
+  const { content, hasMedia, mediaCount } = input;
+  const id = crypto.randomUUID();
+
+  const result = await queryRaw<{
+    id: string;
+    content: string;
+    authorId: string;
+    originalTwishId: string | null;
+    parentTwishId: string | null;
+    hasMedia: number;
+    mediaCount: number;
+    firstMediaUrl: string | null;
+    mediaPreview: string | null;
+    createdAt: string;
+    updatedAt: string;
+    type: string;
+  }>(
+    `
+    INSERT INTO twishes (id, content, author_id, has_media, media_count)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING
+      id,
+      content,
+      author_id AS "authorId",
+      has_media AS "hasMedia",
+      media_count AS "mediaCount",
+      first_media_url AS "firstMediaUrl",
+      media_preview AS "mediaPreview",
+      created_at AS "createdAt",
+      updated_at AS "updatedAt",
+      type,
+      original_twish_id AS "originalTwishId",
+      parent_twish_id AS "parentTwishId"
+    `,
+    [id, content, userId, hasMedia ? 1 : 0, mediaCount]
+  );
+
+  return result[0];
 };
 
 export const likeTwishService = async (input: LikeTwishInput) => {
   const { twishId, username } = input;
-  const foundUser = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.username, username));
 
-  if (foundUser[0]) {
-    const existingLike = await db
-      .select()
-      .from(likes)
-      .where(
-        sql`${likes.twishId} = ${twishId} AND ${likes.userId} = ${foundUser[0].id}`
-      );
+  const foundUser = await queryRaw<{ id: string }>(
+    `
+    SELECT id
+    FROM users
+    WHERE username = $1
+    LIMIT 1
+    `,
+    [username]
+  );
 
-    if (existingLike.length > 0) {
-      return await db
-        .delete(likes)
-        .where(
-          sql`${likes.twishId} = ${twishId} AND ${likes.userId} = ${foundUser[0].id}`
-        )
-        .returning();
-    } else {
-      return await db
-        .insert(likes)
-        .values({
-          twishId,
-          userId: foundUser[0].id,
-        })
-        .returning();
-    }
+  if (!foundUser[0]) {
+    throw new Error("User not found");
   }
-  throw new Error("User not found");
+
+  const existingLike = await queryRaw<{ found: number }>(
+    `
+    SELECT 1 AS found
+    FROM likes
+    WHERE twish_id = $1
+      AND user_id = $2
+    LIMIT 1
+    `,
+    [twishId, foundUser[0].id]
+  );
+
+  if (existingLike.length > 0) {
+    return await queryRaw<{
+      userId: string;
+      twishId: string;
+      createdAt: string;
+    }>(
+      `
+      DELETE FROM likes
+      WHERE twish_id = $1
+        AND user_id = $2
+      RETURNING
+        user_id AS "userId",
+        twish_id AS "twishId",
+        created_at AS "createdAt"
+      `,
+      [twishId, foundUser[0].id]
+    );
+  }
+
+  return await queryRaw<{
+    userId: string;
+    twishId: string;
+    createdAt: string;
+  }>(
+    `
+    INSERT INTO likes (twish_id, user_id)
+    VALUES ($1, $2)
+    RETURNING
+      user_id AS "userId",
+      twish_id AS "twishId",
+      created_at AS "createdAt"
+    `,
+    [twishId, foundUser[0].id]
+  );
 };
 
 export const reTwishService = async (input: ReTwishInput) => {
-  const { content, originalTwishId, parentTwishId, userId, type, hasMedia, mediaCount } = input;
-  
-  // First, verify that the original twish exists
-  const originalTwish = await db
-    .select()
-    .from(twishes)
-    .where(eq(twishes.id, originalTwishId))
-    .limit(1);
+  const {
+    content,
+    originalTwishId,
+    parentTwishId,
+    userId,
+    type,
+    hasMedia,
+    mediaCount,
+  } = input;
+
+  const originalTwish = await queryRaw<{ id: string }>(
+    `
+    SELECT id
+    FROM twishes
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [originalTwishId]
+  );
 
   if (originalTwish.length === 0) {
     throw new Error("Original twish not found");
   }
 
-  // Verify that the user exists
-  const foundUser = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
+  const foundUser = await queryRaw<{ id: string }>(
+    `
+    SELECT id
+    FROM users
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [userId]
+  );
 
   if (foundUser.length === 0) {
     throw new Error("User not found");
   }
-  
 
-  const newTwish = await db
-    .insert(twishes)
-    .values({
-      id: crypto.randomUUID(),
+  const id = crypto.randomUUID();
+  await queryRaw(
+    `
+    INSERT INTO twishes (
+      id,
       content,
-      authorId: userId,
-      originalTwishId,
-      parentTwishId,
+      author_id,
+      original_twish_id,
+      parent_twish_id,
       type,
-      hasMedia: hasMedia ? 1 : 0,
+      has_media,
+      media_count
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `,
+    [
+      id,
+      content,
+      userId,
+      originalTwishId,
+      parentTwishId ?? null,
+      type,
+      hasMedia ? 1 : 0,
       mediaCount,
-  })
-    .returning();
+    ]
+  );
 
-  const fullNewTwish = twishDbQuery().where(eq(twishes.id, newTwish[0].id)).limit(1);
+  const [fullNewTwish] = await fetchTwishes({ twishId: id });
 
-  return (await fullNewTwish)[0];
+  return fullNewTwish;
 };
 
-export const updateTwishMediaPreviewService = async (input: UpdateTwishMediaPreviewInput) => {
+export const updateTwishMediaPreviewService = async (
+  input: UpdateTwishMediaPreviewInput
+) => {
   const { id, mediaPreview } = input;
 
-  await db.update(twishes).set({ mediaPreview }).where(eq(twishes.id, id));
+  await queryRaw(
+    `
+    UPDATE twishes
+    SET media_preview = $1
+    WHERE id = $2
+    `,
+    [mediaPreview, id]
+  );
 
   return true;
-}
+};
 
 export const getSingleTwish = async (twishId: string) => {
-  const twishQuery = twishDbQuery();
+  const [result] = await fetchTwishes({ twishId });
 
-  twishQuery.where(eq(twishes.id, twishId)).limit(1);
-  const [result] = (await twishQuery);
-
-  return { ...result,
-    originalQuotedTwish:
-    { ...result.originalQuotedTwish, 
-      mediaPreview: result.originalQuotedTwish.mediaPreview ? 
-      JSON.parse(result.originalQuotedTwish.mediaPreview) : null 
-    },
-     mediaPreview: result.mediaPreview ? JSON.parse(result.mediaPreview) : null};
+  return formatTwish(result);
 };
 
-export const getCommentsByTwishId = async ({ type, twishId }: GetCommentsByTwishIdInput) => {
-  const twishQuery = twishDbQuery();
+export const getCommentsByTwishId = async ({
+  type,
+  twishId,
+}: GetCommentsByTwishIdInput) => {
+  const options: TwishQueryOptions = {
+    commentOnly: true,
+  };
 
-  const equalQuery = type === "comment" ? eq(twishes.parentTwishId, twishId) : eq(twishes.originalTwishId, twishId)
+  if (type === "comment") {
+    options.commentParentId = twishId;
+  } else {
+    options.commentOriginalId = twishId;
+  }
 
-  const result = await twishQuery.where(and(equalQuery, eq(twishes.type, 'comment')));
+  const result = await fetchTwishes(options);
 
-  return result.map(cm => ({
-    ...cm,
-    originalQuotedTwish:
-    { ...cm.originalQuotedTwish, 
-      mediaPreview: cm.originalQuotedTwish.mediaPreview ? 
-      JSON.parse(cm.originalQuotedTwish.mediaPreview) : null 
-    },
-    mediaPreview: cm.mediaPreview ? JSON.parse(cm.mediaPreview) : null
-  }));
+  return result.map(formatTwish);
 };
 
-export const deleteTwishService = async (userId: string, input: { id: string }) => {
+export const deleteTwishService = async (
+  userId: string,
+  input: { id: string }
+) => {
   const { id } = input;
 
-  const existingTwish = await db
-    .select()
-    .from(twishes)
-    .where(and(eq(twishes.id, id), eq(twishes.authorId, userId)))
-    .limit(1);
+  const existingTwish = await queryRaw<{ id: string }>(
+    `
+    SELECT id
+    FROM twishes
+    WHERE id = $1
+      AND author_id = $2
+    LIMIT 1
+    `,
+    [id, userId]
+  );
 
   if (existingTwish.length === 0) {
     throw new Error("Twish not found");
   }
 
-  await db
-    .delete(twishes)
-    .where(eq(twishes.id, id))
-    .returning();
+  await queryRaw(
+    `
+    DELETE FROM twishes
+    WHERE id = $1
+    `,
+    [id]
+  );
 
   return { success: true };
 };
-
-

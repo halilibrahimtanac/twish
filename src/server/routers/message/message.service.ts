@@ -1,141 +1,220 @@
-import db from "@/db";
-import { conversations, messages, participants, pictures, users } from "@/db/schema";
-import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
-import type { SendMessageInput } from "./message.input";
+﻿import type { SendMessageInput } from "./message.input";
 import { TRPCError } from "@trpc/server";
-import { alias } from "drizzle-orm/pg-core";
+import sql, { queryRaw } from "@/db/neon";
+
+type ConversationRow = {
+  id: string;
+  updatedAt: unknown;
+  otherUserId: string;
+  otherUserName: string;
+  otherUserUsername: string;
+  otherUserProfilePictureUrl: string | null;
+  lastMessageContent: string | null;
+  lastMessageSenderId: string | null;
+  lastMessageCreatedAt: unknown | null;
+};
+
+type MessageRow = {
+  id: string;
+  content: string;
+  conversationId: string;
+  senderId: string;
+  createdAt: unknown;
+  senderIdValue: string;
+  senderUsername: string;
+  senderName: string;
+};
 
 export async function getConversationsForUser(userId: string) {
-  const otherParticipants = alias(participants, "other_participants");
-  const otherUsers = alias(users, "other_users");
-  const otherUserPics = alias(pictures, "other_user_pics");
+  const rows = await queryRaw<ConversationRow>(
+    `
+    SELECT
+      conversations.id,
+      conversations.updated_at AS "updatedAt",
+      other_users.id AS "otherUserId",
+      other_users.name AS "otherUserName",
+      other_users.username AS "otherUserUsername",
+      other_user_pics.url AS "otherUserProfilePictureUrl",
+      last_message.content AS "lastMessageContent",
+      last_message.sender_id AS "lastMessageSenderId",
+      last_message.created_at AS "lastMessageCreatedAt"
+    FROM conversations
+    INNER JOIN participants AS other_participants
+      ON other_participants.conversation_id = conversations.id
+     AND other_participants.user_id = $1
+    INNER JOIN users AS other_users
+      ON other_users.id = other_participants.user_id
+    LEFT JOIN pictures AS other_user_pics
+      ON other_users.profile_picture_id = other_user_pics.id
+    LEFT JOIN LATERAL (
+      SELECT content, sender_id, created_at
+      FROM messages
+      WHERE conversation_id = conversations.id
+      ORDER BY created_at DESC
+      LIMIT 1
+    ) AS last_message ON true
+    WHERE conversations.id IN (
+      SELECT conversation_id
+      FROM participants
+      WHERE user_id = $1
+    )
+    ORDER BY conversations.updated_at DESC
+    `,
+    [userId]
+  );
 
-  const userConversationIds = db
-    .select({ id: participants.conversationId })
-    .from(participants)
-    .where(eq(participants.userId, userId));
-
-  const conversationsList = await db
-    .select({
-      id: conversations.id,
-      updatedAt: conversations.updatedAt,
-      otherUser: {
-        id: otherUsers.id,
-        name: otherUsers.name,
-        username: otherUsers.username,
-        profilePictureUrl: otherUserPics.url,
-      },
-      lastMessage: {
-        content: messages.content,
-        senderId: messages.senderId,
-        createdAt: messages.createdAt,
-      },
-    })
-    .from(conversations)
-    .where(inArray(conversations.id, userConversationIds))
-    .innerJoin(
-      otherParticipants,
-      and(
-        eq(otherParticipants.conversationId, conversations.id),
-        eq(otherParticipants.userId, userId)
-      )
-    )
-    .innerJoin(
-      otherUsers,
-      eq(otherUsers.id, otherParticipants.userId)
-    )
-    .leftJoin(
-        otherUserPics, eq(otherUsers.profilePictureId, otherUserPics.id)
-    )
-    .leftJoin(
-        messages,
-        eq(messages.id, db.select({ id: messages.id }).from(messages)
-            .where(eq(messages.conversationId, conversations.id))
-            .orderBy(desc(messages.createdAt)).limit(1)
-        )
-    )
-    .orderBy(desc(conversations.updatedAt));
-
-  return conversationsList;
+  return rows.map((row) => ({
+    id: row.id,
+    updatedAt: row.updatedAt,
+    otherUser: {
+      id: row.otherUserId,
+      name: row.otherUserName,
+      username: row.otherUserUsername,
+      profilePictureUrl: row.otherUserProfilePictureUrl,
+    },
+    lastMessage: {
+      content: row.lastMessageContent,
+      senderId: row.lastMessageSenderId,
+      createdAt: row.lastMessageCreatedAt,
+    },
+  }));
 }
 
-export async function getMessagesBetweenUsers(currentUserId: string, otherUserId: string) {
-    const conversationSubquery = db
-        .select({ conversationId: participants.conversationId })
-        .from(participants)
-        .where(or(eq(participants.userId, currentUserId), eq(participants.userId, otherUserId)))
-        .groupBy(participants.conversationId)
-        .having(sql`count(${participants.userId}) = 2`)
-        .limit(1);
+export async function getMessagesBetweenUsers(
+  currentUserId: string,
+  otherUserId: string
+) {
+  const conversationRows = await queryRaw<{ conversationId: string }>(
+    `
+    SELECT conversation_id AS "conversationId"
+    FROM participants
+    WHERE user_id = $1 OR user_id = $2
+    GROUP BY conversation_id
+    HAVING COUNT(user_id) = 2
+    LIMIT 1
+    `,
+    [currentUserId, otherUserId]
+  );
 
-    const [conversation] = await conversationSubquery;
+  if (conversationRows.length === 0) {
+    return [];
+  }
 
-    if (!conversation) {
-        return [];
-    }
+  const conversationId = conversationRows[0].conversationId;
 
-    const allMessages = await db.query.messages.findMany({
-        where: eq(messages.conversationId, conversation.conversationId),
-        with: {
-            sender: {
-                columns: {
-                    id: true,
-                    name: true,
-                    username: true,
-                },
-            },
-        },
-        orderBy: asc(messages.createdAt),
-    });
+  const rows = await queryRaw<MessageRow>(
+    `
+    SELECT
+      messages.id,
+      messages.content,
+      messages.conversation_id AS "conversationId",
+      messages.sender_id AS "senderId",
+      messages.created_at AS "createdAt",
+      sender.id AS "senderIdValue",
+      sender.username AS "senderUsername",
+      sender.name AS "senderName"
+    FROM messages
+    INNER JOIN users AS sender
+      ON sender.id = messages.sender_id
+    WHERE messages.conversation_id = $1
+    ORDER BY messages.created_at ASC
+    `,
+    [conversationId]
+  );
 
-    return allMessages;
+  return rows.map((row) => ({
+    id: row.id,
+    content: row.content,
+    conversationId: row.conversationId,
+    senderId: row.senderId,
+    createdAt: row.createdAt,
+    sender: {
+      id: row.senderIdValue,
+      username: row.senderUsername,
+      name: row.senderName,
+    },
+  }));
 }
 
 export async function sendMessage(senderId: string, input: SendMessageInput) {
-    const { toUserId, content } = input;
+  const { toUserId, content } = input;
 
-    if (senderId === toUserId) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Kendinize mesaj gönderemezsiniz." });
+  if (senderId === toUserId) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Kendinize mesaj gonderemezsiniz.",
+    });
+  }
+
+  const created = await sql.begin(async (tx) => {
+    const conversationRows = await tx.unsafe<{ conversationId: string }[]>(
+      `
+      SELECT conversation_id AS "conversationId"
+      FROM participants
+      WHERE user_id = $1 OR user_id = $2
+      GROUP BY conversation_id
+      HAVING COUNT(user_id) = 2
+      LIMIT 1
+      `,
+      [senderId, toUserId]
+    );
+
+    let conversationId = conversationRows[0]?.conversationId;
+
+    if (!conversationId) {
+      conversationId = crypto.randomUUID();
+
+      await tx.unsafe(
+        `
+        INSERT INTO conversations (id)
+        VALUES ($1)
+        `,
+        [conversationId]
+      );
+
+      await tx.unsafe(
+        `
+        INSERT INTO participants (conversation_id, user_id)
+        VALUES ($1, $2), ($1, $3)
+        `,
+        [conversationId, senderId, toUserId]
+      );
     }
 
-    return db.transaction(async (tx) => {
-      const [conversationRow] = await tx
-        .select({ conversationId: participants.conversationId })
-        .from(participants)
-        .where(or(eq(participants.userId, senderId), eq(participants.userId, toUserId)))
-        .groupBy(participants.conversationId)
-        .having(sql`count(${participants.userId}) = 2`)
-        .limit(1)
+    const messageId = crypto.randomUUID();
+    const [newMessage] = await tx.unsafe<
+      {
+        id: string;
+        content: string;
+        senderId: string;
+        conversationId: string;
+        createdAt: unknown;
+      }[]
+    >(
+      `
+      INSERT INTO messages (id, sender_id, conversation_id, content)
+      VALUES ($1, $2, $3, $4)
+      RETURNING
+        id,
+        content,
+        sender_id AS "senderId",
+        conversation_id AS "conversationId",
+        created_at AS "createdAt"
+      `,
+      [messageId, senderId, conversationId, content]
+    );
 
-      let conversationId: string;
+    await tx.unsafe(
+      `
+      UPDATE conversations
+      SET updated_at = NOW()
+      WHERE id = $1
+      `,
+      [conversationId]
+    );
 
-      if (!conversationRow) {
-        const insertedConvs = tx.insert(conversations).values({ id: crypto.randomUUID() }).returning();
+    return newMessage;
+  });
 
-        const [newConversation] = await insertedConvs;
-        conversationId = newConversation.id;
-
-        await tx.insert(participants)
-          .values([
-            { conversationId, userId: senderId },
-            { conversationId, userId: toUserId },
-          ])
-      } else {
-        conversationId = conversationRow.conversationId;
-      }
-
-      const newMessage = await tx
-        .insert(messages)
-        .values({
-          id: crypto.randomUUID(),
-          senderId,
-          conversationId,
-          content,
-        })
-        .returning()
-
-      await tx.update(conversations).set({ updatedAt: new Date() }).where(eq(conversations.id, conversationId));
-
-        return newMessage[0];
-    });
+  return created;
 }
